@@ -8,6 +8,8 @@ set tabstop=4
 set shiftwidth=4
 set expandtab
 
+set nowrap
+
 
 " Show line and column number in the status line
 set ruler
@@ -50,11 +52,9 @@ function! OpenSpecialListBuffer(list, action_map, filetype)
   execute 'setlocal filetype=' . a:filetype
   setlocal nobuflisted
 
-  " Set content
   call setline(1, a:list)
   setlocal nomodifiable
 
-  " Apply buffer-local key mappings
   for [key, func] in items(a:action_map)
     execute 'nnoremap <buffer> ' . key . ' :call ' . func . '()<CR>'
   endfor
@@ -65,7 +65,7 @@ function! ListFilesInBuffer()
   let l:full_paths = globpath(l:cwd, '**/*', 0, 1)
   let l:files = map(l:full_paths, {_, val -> fnamemodify(val, ':.' )})
 
-  call OpenSpecialListBuffer(l:files, {'<CR>': 'OpenFileUnderCursor'}, 'filelist')
+  call OpenSpecialListBuffer(l:files, {'<CR>': 'OpenFileUnderCursor', '<S-h>': 'OpenFileUnderCursorVSplitRight'}, 'filelist')
 endfunction
 
 function! OpenFileUnderCursor()
@@ -76,6 +76,17 @@ function! OpenFileUnderCursor()
     echo "File does not exist: " . l:file
   endif
 endfunction
+
+function! OpenFileUnderCursorVSplitRight()
+  let l:file = getline('.')
+  if filereadable(l:file)
+    " Open file in a vertical split on the right (default)
+    execute 'vsplit ' . fnameescape(l:file)
+  else
+    echo "File does not exist: " . l:file
+  endif
+endfunction
+
 
 nnoremap <Leader>lf :call ListFilesInBuffer()<CR>
 
@@ -104,7 +115,6 @@ nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 " Toggle between current and last buffer
 nnoremap <leader><leader> <c-^>
 
-" Resize window height
 function! IncreaseSize()
   resize +1
 endfunction
@@ -113,7 +123,6 @@ function! DecreaseSize()
   resize -1
 endfunction
 
-" Resize window width
 function! IncreaseWidth()
   execute "wincmd >"
 endfunction
@@ -134,3 +143,60 @@ nnoremap <C-h> :call DecreaseWidth()<CR>
 
 nnoremap <C-M-j> <C-e>
 nnoremap <C-M-k> <C-y>
+
+let s:current_list = []
+let s:action_map = {}
+let s:filetype = ''
+
+function! s:FilterList(pattern)
+  if a:pattern == ''
+    let l:filtered = s:current_list
+  else
+    let l:filtered = filter(copy(s:current_list), 'v:val =~ a:pattern')
+  endif
+
+  call setbufvar('%', '&modifiable', 1)
+  call setline(1, l:filtered)
+  call deletebufline('%', len(l:filtered) + 1, '$')
+  call setbufvar('%', '&modifiable', 0)
+endfunction
+
+function! OpenSpecialListBufferWithSearch(list, action_map, filetype)
+  let s:current_list = a:list
+  let s:action_map = a:action_map
+  let s:filetype = a:filetype
+
+  vert new
+  setlocal buftype=nofile
+  setlocal bufhidden=wipe
+  setlocal noswapfile
+  setlocal modifiable
+  execute 'setlocal filetype=' . a:filetype
+  setlocal nobuflisted
+
+  call setline(1, a:list)
+  setlocal nomodifiable
+
+  for [key, func] in items(a:action_map)
+    execute 'nnoremap <buffer> ' . key . ' :call ' . func . '()<CR>'
+  endfor
+
+  nnoremap <buffer> / :call OpenSpecialListBufferWithSearch_PromptFilter()<CR>
+endfunction
+
+function! OpenSpecialListBufferWithSearch_PromptFilter()
+  let l:pattern = input('Filter: ')
+  call s:FilterList(l:pattern)
+endfunction
+
+function! ListFilesInBufferWithSearch()
+  let l:cwd = getcwd()
+  let l:full_paths = globpath(l:cwd, '**/*', 0, 1)
+  let l:files = map(l:full_paths, {_, val -> fnamemodify(val, ':.' )})
+
+  call OpenSpecialListBufferWithSearch(l:files, {'<CR>': 'OpenFileUnderCursor', '<S-h>': 'OpenFileUnderCursorVSplitRight'}, 'filelist')
+endfunction
+
+nnoremap <Leader>ff :call ListFilesInBufferWithSearch()<CR>
+
+
