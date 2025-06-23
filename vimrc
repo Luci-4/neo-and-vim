@@ -30,4 +30,36 @@ set mouse=a
 " Set the default file encoding
 set encoding=utf-8
 set termguicolors
-colorscheme punk
+colorscheme purpura
+let mapleader = "\<Space>"
+
+if has("win32") || has("win64")
+    " \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ no escape
+else
+    :nnoremap <leader>ev :vsplit $MYVIMRC<cr>
+    :nnoremap <leader>sv :source $MYVIMRC<cr>
+endif
+
+function! ListFilesInBuffer()
+  " Get the current working directory
+  let l:cwd = getcwd()
+
+  " Use globpath to get list of all files recursively
+  let l:files = globpath(l:cwd, '**/*', 0, 1)
+
+  " Open vertical split with new buffer
+  vert new
+  setlocal buftype=nofile
+  setlocal bufhidden=wipe
+  setlocal noswapfile
+  setlocal modifiable
+
+  " Add files to the buffer
+  call setline(1, l:files)
+
+  " Optional: make buffer unmodifiable
+  setlocal nomodifiable
+endfunction
+
+" Map to a key, for example <Leader>lf (list files)
+nnoremap <Leader>lf :call ListFilesInBuffer()<CR>
