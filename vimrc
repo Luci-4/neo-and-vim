@@ -44,8 +44,11 @@ function! ListFilesInBuffer()
   " Get the current working directory
   let l:cwd = getcwd()
 
-  " Use globpath to get list of all files recursively
-  let l:files = globpath(l:cwd, '**/*', 0, 1)
+  " Get list of all files recursively (full paths)
+  let l:full_paths = globpath(l:cwd, '**/*', 0, 1)
+
+  " Convert to relative paths
+  let l:files = map(l:full_paths, {_, val -> fnamemodify(val, ':.' )})
 
   " Open vertical split with new buffer
   vert new
@@ -54,7 +57,7 @@ function! ListFilesInBuffer()
   setlocal noswapfile
   setlocal modifiable
 
-  " Add files to the buffer
+  " Add relative file paths to the buffer
   call setline(1, l:files)
 
   " Optional: make buffer unmodifiable
