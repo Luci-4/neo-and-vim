@@ -10,6 +10,8 @@ set expandtab
 
 set nowrap
 
+set noswapfile
+
 
 " Show line and column number in the status line
 set ruler
@@ -34,7 +36,6 @@ set encoding=utf-8
 set termguicolors
 colorscheme purpura
 let mapleader = "\<Space>"
-
 if has("win32") || has("win64")
     " \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ no escape
 else
@@ -42,9 +43,13 @@ else
     :nnoremap <leader>sv :source $MYVIMRC<cr>
 endif
 
-function! OpenSpecialListBuffer(list, action_map, filetype)
-  " Open vertical split with new scratch buffer
-  vert new
+function! OpenSpecialListBuffer(list, action_map, filetype, vertical)
+  if a:vertical
+    vertical enew
+  else
+    enew
+  endif
+
   setlocal buftype=nofile
   setlocal bufhidden=wipe
   setlocal noswapfile
@@ -65,7 +70,7 @@ function! ListFilesInBuffer()
   let l:full_paths = globpath(l:cwd, '**/*', 0, 1)
   let l:files = map(l:full_paths, {_, val -> fnamemodify(val, ':.' )})
 
-  call OpenSpecialListBuffer(l:files, {'<CR>': 'OpenFileUnderCursor', '<S-h>': 'OpenFileUnderCursorVSplitRight'}, 'filelist')
+  call OpenSpecialListBuffer(l:files, {'<CR>': 'OpenFileUnderCursor', '<S-h>': 'OpenFileUnderCursorVSplitRight'}, 'filelist', 1)
 endfunction
 
 function! OpenFileUnderCursor()
@@ -92,7 +97,7 @@ nnoremap <Leader>lf :call ListFilesInBuffer()<CR>
 
 function! ListBranches()
   let l:branches = split(system('git branch --all'), "\n")
-  call OpenSpecialListBuffer(l:branches, {'<CR>': 'CheckoutBranch'}, 'branchlist')
+  call OpenSpecialListBuffer(l:branches, {'<CR>': 'CheckoutBranch'}, 'branchlist', 1)
 endfunction
 
 function! CheckoutBranch()
@@ -108,7 +113,7 @@ function! ShowMessagesInBuffer()
   redir END
 
   let l:lines = split(l:msgs, "\n")
-  call OpenSpecialListBuffer(l:lines, {}, 'messagesbuffer')
+  call OpenSpecialListBuffer(l:lines, {}, 'messagesbuffer', 1)
 endfunction
 
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
@@ -116,11 +121,11 @@ nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 nnoremap <leader><leader> <c-^>
 
 function! IncreaseSize()
-  resize +1
+  resize +10
 endfunction
 
 function! DecreaseSize()
-  resize -1
+  resize -10
 endfunction
 
 function! IncreaseWidth()
@@ -143,6 +148,8 @@ nnoremap <C-h> :call DecreaseWidth()<CR>
 
 nnoremap <C-M-j> <C-e>
 nnoremap <C-M-k> <C-y>
+
+tnoremap <Esc> <C-\><C-n>
 
 let s:current_list = []
 let s:action_map = {}
@@ -200,3 +207,61 @@ endfunction
 nnoremap <Leader>ff :call ListFilesInBufferWithSearch()<CR>
 
 
+
+
+set statusline=%f\ %y\ %=Ln:%l\ Col:%c
+set termguicolors
+highlight StatusLine ctermfg=White ctermbg=DarkBlue guifg=#ffffff guibg=#005f87
+highlight StatusLineNC ctermfg=Grey ctermbg=DarkGrey
+function! TitleString()
+  let cwd = fnamemodify(getcwd(), ':t') 
+
+  let repo = ''
+  let branch = ''
+
+  if !empty(finddir('.git', '.;'))
+    let toplevel = systemlist('git rev-parse --show-toplevel')[0]
+    let repo = fnamemodify(toplevel, ':t')
+
+    
+    let branchlist = systemlist('git rev-parse --abbrev-ref HEAD 2>/dev/null')
+    if !empty(branchlist)
+      let branch = branchlist[0]
+    endif
+  endif
+  
+  let parts = ['/' . cwd]
+  if repo !=# ''
+    call add(parts, repo)
+    if branch !=# ''
+      call add(parts, ' ' . branch)
+    endif
+  endif
+
+  return join(parts, ' • ')  
+endfunction
+
+set title
+autocmd BufEnter,DirChanged * let &titlestring = TitleString()
+set shortmess+=I
+
+function! ListRecentFilesInBuffer()
+  let l:recent_files = []
+
+  for file in v:oldfiles
+    let l:relpath = fnamemodify(file, ':.')
+
+    if l:relpath !=# file
+      call add(l:recent_files, l:relpath)
+    endif
+  endfor
+
+  if !empty(l:recent_files)
+    call OpenSpecialListBuffer(l:recent_files, {'<CR>': 'OpenFileUnderCursor', '<S-h>': 'OpenFileUnderCursorVSplitRight'}, 'recentfiles', 0)
+  endif
+endfunction
+
+augroup RecentFilesListOnStart
+  autocmd!
+  autocmd VimEnter * if argc() == 0 | call ListRecentFilesInBuffer() | endif
+augroup END
