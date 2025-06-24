@@ -1,6 +1,7 @@
 let s:config_path = expand('~/.vim')
 
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
+execute 'source' s:config_path . '/files_utils.vim'
 
 let s:current_list = []
 let s:action_map = {}
@@ -24,7 +25,7 @@ function! OpenSpecialListBufferWithSearch(list, action_map, filetype)
   let s:action_map = a:action_map
   let s:filetype = a:filetype
 
-  vert new
+  vert enew
   setlocal buftype=nofile
   setlocal bufhidden=wipe
   setlocal noswapfile
@@ -35,9 +36,9 @@ function! OpenSpecialListBufferWithSearch(list, action_map, filetype)
   call setline(1, a:list)
   setlocal nomodifiable
 
-  for [key, func] in items(a:action_map)
-    execute 'nnoremap <buffer> ' . key . ' :call ' . func . '()<CR>'
-  endfor
+    for [key, func] in items(a:action_map)
+      execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))<CR>'
+    endfor
 
   nnoremap <buffer> / :call OpenSpecialListBufferWithSearch_PromptFilter()<CR>
 endfunction

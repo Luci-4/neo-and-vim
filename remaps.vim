@@ -3,19 +3,19 @@ execute 'source' s:config_path . '/spectroscope/files.vim'
 execute 'source' s:config_path . '/spectroscope/filter_files.vim'
 execute 'source' s:config_path . '/spectroscope/git.vim'
 execute 'source' s:config_path . '/spectroscope/messages.vim'
+execute 'source' s:config_path . '/spectroscope/vimgrep.vim'
 
 let mapleader = "\<Space>"
-if has("win32") || has("win64")
-    " \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ no escape
-else
-    :nnoremap <leader>ev :vsplit $MYVIMRC<cr>
-    :nnoremap <leader>sv :source $MYVIMRC<cr>
-endif
+let VIMRC_PATH = expand('~/.vim/vimrc')
 
-nnoremap <Leader>ff :call ListFilesInBuffer()<CR>
+exec 'nnoremap <leader>ev :vsplit ' . VIMRC_PATH . '<CR>'
+exec 'nnoremap <leader>rr :source ' . VIMRC_PATH . '<CR>'
+
+nnoremap <Leader>fa :call ListFilesInBuffer()<CR>
 nnoremap <Leader>gb :call ListBranches()<CR>
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
-nnoremap <Leader>fs :call ListFilesInBufferWithSearch()<CR>
+nnoremap <Leader>ff :call ListFilesInBufferWithSearch()<CR>
+nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
 
 nnoremap <leader><leader> <c-^>
 

@@ -1,6 +1,8 @@
 let s:config_path = expand('~/.vim')
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 
+set clipboard=unnamed
+
 " Enable line numbers
 set number
 
@@ -28,8 +30,6 @@ set showmatch
 " Enable auto-completion
 set completeopt=menu,menuone,noselect
 
-" Set clipboard to use the system clipboard
-set clipboard=unnamedplus
 
 " Enable mouse support
 set mouse=a
