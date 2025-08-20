@@ -1,4 +1,4 @@
-let s:config_path = expand('~/.vim')
+let s:config_path = expand('~/vimfiles')
 
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 
@@ -82,7 +82,7 @@ highlight CursorLine ctermbg=LightGrey guibg=#555555
       execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))<CR>'
     endfor
 
-  nnoremap <buffer> / :call Open_specialListBufferWithSearch_PromptFilter()<CR>
+  nnoremap <buffer> / :call OpenSpecialListBufferWithSearch_PromptFilter()<CR>
 endfunction
 
 function! OpenSpecialListBufferWithSearch_PromptFilter()

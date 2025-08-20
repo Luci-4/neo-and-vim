@@ -1,4 +1,4 @@
-let s:config_path = expand('~/.vim')
+let s:config_path = expand('~/vimfiles')
 
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 

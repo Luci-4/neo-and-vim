@@ -1,4 +1,4 @@
-let s:config_path = expand('~/.vim')
+let s:config_path = expand('~/vimfiles')
 execute 'source' s:config_path . '/spectroscope/files.vim'
 execute 'source' s:config_path . '/spectroscope/filter_files.vim'
 execute 'source' s:config_path . '/spectroscope/git.vim'
@@ -6,12 +6,12 @@ execute 'source' s:config_path . '/spectroscope/messages.vim'
 execute 'source' s:config_path . '/spectroscope/vimgrep.vim'
 
 let mapleader = "\<Space>"
-let VIMRC_PATH = expand('~/.vim/vimrc')
+let VIMRC_PATH = expand('~/_vimrc')
 
 exec 'nnoremap <leader>ev :vsplit ' . VIMRC_PATH . '<CR>'
 exec 'nnoremap <leader>rr :source ' . VIMRC_PATH . '<CR>'
 
-nnoremap <Leader>fa :call ListFilesInBuffer()<CR>
+nnoremap <Leader>fr :call ListRecentFilesInBuffer()<CR>
 nnoremap <Leader>gb :call ListBranches()<CR>
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 nnoremap <Leader>ff :call ListFilesInBufferWithSearch()<CR>
@@ -39,6 +39,10 @@ nnoremap <Esc>h <C-w>h
 nnoremap <Esc>j <C-w>j
 nnoremap <Esc>k <C-w>k
 nnoremap <Esc>l <C-w>l
+nnoremap <A-h> <C-w>h
+nnoremap <A-j> <C-w>j
+nnoremap <A-k> <C-w>k
+nnoremap <A-l> <C-w>l
 
 nnoremap <C-k> :call IncreaseSize()<CR>
 nnoremap <C-j> :call DecreaseSize()<CR>

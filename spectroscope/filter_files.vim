@@ -1,4 +1,4 @@
-let s:config_path = expand('~/.vim')
+let s:config_path = expand('~/vimfiles')
 
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 execute 'source' s:config_path . '/files_utils.vim'
@@ -20,6 +20,11 @@ function! s:FilterList(pattern)
   call setbufvar('%', '&modifiable', 0)
 endfunction
 
+
+function! OpenSpecialListBufferWithSearch_PromptFilter()
+  let l:pattern = input('Filter: ')
+  call s:FilterList(l:pattern)
+endfunction
 function! OpenSpecialListBufferWithSearch(list, action_map, filetype)
   let s:current_list = a:list
   let s:action_map = a:action_map
@@ -43,10 +48,6 @@ function! OpenSpecialListBufferWithSearch(list, action_map, filetype)
   nnoremap <buffer> / :call OpenSpecialListBufferWithSearch_PromptFilter()<CR>
 endfunction
 
-function! OpenSpecialListBufferWithSearch_PromptFilter()
-  let l:pattern = input('Filter: ')
-  call s:FilterList(l:pattern)
-endfunction
 
 function! ListFilesInBufferWithSearch()
   let l:cwd = getcwd()
