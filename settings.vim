@@ -99,4 +99,4 @@ augroup RecentFilesListOnStart
 augroup END
 
 autocmd FileType python setlocal tabstop=4 shiftwidth=4
-
+set signcolumn=yes
