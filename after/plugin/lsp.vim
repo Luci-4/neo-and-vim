@@ -1,20 +1,97 @@
 let s:config_path = expand('~/vimfiles')
 execute 'source' s:config_path . '/system_check.vim'
-let s:clangd_buffer = ''
-let s:lsp_diagnostics = []
 
-function! Lsp_position() abort
+let s:clangd_buffer = ''
+
+function! LSPHover() abort
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 4,
+    \ 'method': 'textDocument/hover',
+    \ 'params': {
+\   'textDocument': {'uri': s:lsp_text_document_uri()},
+    \   'position': s:lsp_position()
+    \ }
+    \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_hover')})
+endfunction
+
+function! s:lsp_handle_hover(channel, msg) abort
+    if has_key(a:msg, 'result') && has_key(a:msg.result, 'contents')
+        let l:contents = a:msg.result.contents
+        let l:texts = []
+
+        if type(l:contents) == type([])
+            for c in l:contents
+                if type(c) == type({})
+                    call add(l:texts, get(c, 'value', ''))
+                else
+                    call add(l:texts, c)
+                endif
+            endfor
+        elseif type(l:contents) == type({})
+            call add(l:texts, get(l:contents, 'value', ''))
+        else
+            call add(l:texts, l:contents)
+        endif
+
+        let l:lines = []
+        for t in l:texts
+            let t_clean = substitute(t, '\^@', "\n", 'g')
+            call extend(l:lines, split(t_clean, "\n"))
+        endfor
+
+        call filter(l:lines, 'v:val !=# ""')
+        let l:lines = map(l:lines, 'trim(v:val)')
+
+        if empty(l:lines)
+            echom "No hover info"
+            return
+        endif
+
+        if exists('s:hover_popup') && s:hover_popup > 0
+            call popup_close(s:hover_popup)
+        endif
+
+        let s:hover_popup = popup_create(l:lines, {
+        \ 'pos': 'botleft',
+        \ 'line': 'cursor+1',
+        \ 'col': 'cursor',
+        \ 'wrap': v:true,
+        \ 'border': [],
+        \ 'padding': [0,1,0,1],
+        \ 'highlight': 'Normal',
+        \ 'borderhighlight': ['MoreMsg'],
+        \ 'mapping': v:true,
+        \ 'filter': function('s:hover_popup_filter')
+        \ })
+    else
+        echom "No hover info"
+    endif
+endfunction
+
+function! s:hover_popup_filter(popup_id, key) abort
+    if a:key =~# '\v(\<Esc\>|\cC|q)'
+        if exists('s:hover_popup') && s:hover_popup > 0
+            call popup_close(s:hover_popup)
+            let s:hover_popup = 0
+        endif
+        return 1  
+    endif
+    return 0 
+endfunction
+
+function! s:lsp_position() abort
     let l:line = line('.') - 1
     let l:col  = col('.') - 1
     return {'line': l:line, 'character': l:col}
 endfunction
 
-function! Lsp_text_document_uri() abort
+function! s:lsp_text_document_uri() abort
     return TernaryIfLinux('file://' . expand('%:p'), 'file:///' . substitute(expand('%:p'), '\\', '/', 'g'))
 endfunction
 
-
-function! Lsp_handle_definition(channel, msg) abort
+function! s:lsp_handle_definition(channel, msg) abort
     echom a:msg
     if has_key(a:msg, 'result') && !empty(a:msg.result)
         let l:target = a:msg.result[0]
@@ -27,20 +104,6 @@ function! Lsp_handle_definition(channel, msg) abort
         echom "No definition found"
     endif
 endfunction
-
-function! LSPGoToDefintion() abort
-    let l:msg = {
-    \ 'jsonrpc': '2.0',
-    \ 'id': 2,
-    \ 'method': 'textDocument/definition',
-    \ 'params': {
-    \   'textDocument': {'uri': Lsp_text_document_uri()},
-    \   'position': Lsp_position()
-    \ }
-    \ }
-    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('Lsp_handle_definition')})
-endfunction
-
 
 function! ShowDiagnostic(bufnr, diag) abort
     if type(a:diag) != type({})
@@ -146,12 +209,56 @@ function! s:handle_msg(channel, msg) abort
         for d in l:diagnostics
             call ShowDiagnostic(l:bufnr, d)
         endfor
-        " echom 'Diagnostics for ' . l:filename . ': ' . string(s:lsp_diagnostics[l:bufnr])
     endif
 endfunction
 
 function! s:on_lsp_exit(channel, msg) abort
     echom 'clangd exited: ' . a:msg
+endfunction
+
+function! s:lsp_handle_references(channel, msg) abort
+    if has_key(a:msg, 'result') && !empty(a:msg.result)
+        new
+        setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+        call setline(1, ['References:'])
+        for ref in a:msg.result
+            let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
+            let l:line = ref.range.start.line + 1
+            let l:col  = ref.range.start.character + 1
+            call append('$', l:file . ':' . l:line . ':' . l:col)
+        endfor
+        normal! gg
+    else
+        echom "No references found"
+    endif
+endfunction
+
+
+function! LSPGoToDefintion() abort
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 2,
+    \ 'method': 'textDocument/definition',
+    \ 'params': {
+    \   'textDocument': {'uri': s:lsp_text_document_uri()},
+    \   'position': s:lsp_position()
+    \ }
+    \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_definition')})
+endfunction
+
+function! LSPReferences() abort
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 3,
+    \ 'method': 'textDocument/references',
+    \ 'params': {
+    \   'textDocument': {'uri': s:lsp_text_document_uri()},
+    \   'position': s:lsp_position(),
+    \   'context': {'includeDeclaration': v:true}
+    \ }
+    \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_references')})
 endfunction
 
 let s:opts = {
@@ -186,7 +293,7 @@ function! s:lsp_did_open() abort
           \ 'method': 'textDocument/didOpen',
           \ 'params': {
           \     'textDocument': {
-          \         'uri': Lsp_text_document_uri(),
+          \         'uri': s:lsp_text_document_uri(),
           \         'languageId': 'cpp',
           \         'version': 1,
           \         'text': join(getbufline('%', 1, '$'), "\n")
@@ -213,7 +320,7 @@ function! s:lsp_did_change() abort
           \ 'method': 'textDocument/didChange',
           \ 'params': {
           \     'textDocument': {
-          \         'uri': Lsp_text_document_uri(),
+          \         'uri': s:lsp_text_document_uri(),
           \         'version': s:lsp_version
           \     },
           \     'contentChanges': [
@@ -230,3 +337,5 @@ autocmd BufReadPost,BufNewFile * call s:lsp_did_open()
 autocmd TextChanged,TextChangedI * call s:lsp_did_change()
 
 nnoremap gd :call LSPGoToDefintion()<CR>
+nnoremap gr :call LSPReferences()<CR>
+nnoremap K :call LSPHover()<CR>
