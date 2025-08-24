@@ -1,7 +1,5 @@
-let s:config_path = fnamemodify($MYVIMRC, ':h')
+let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/system_check.vim'
-
-let s:clangd_buffer = ''
 
 function! LSPHover() abort
     let l:msg = {
@@ -9,14 +7,17 @@ function! LSPHover() abort
     \ 'id': 4,
     \ 'method': 'textDocument/hover',
     \ 'params': {
-\   'textDocument': {'uri': s:lsp_text_document_uri()},
+    \   'textDocument': {'uri': s:lsp_text_document_uri()},
     \   'position': s:lsp_position()
     \ }
     \ }
+    echom "running hover with"
+    echom l:msg
     call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_hover')})
 endfunction
 
 function! s:lsp_handle_hover(channel, msg) abort
+    echom a:msg
     if has_key(a:msg, 'result') && has_key(a:msg.result, 'contents')
         let l:contents = a:msg.result.contents
         let l:texts = []
@@ -45,12 +46,13 @@ function! s:lsp_handle_hover(channel, msg) abort
         let l:lines = map(l:lines, 'trim(v:val)')
 
         if empty(l:lines)
-            echom "No hover info"
+            echom "No hover info (empty lines)"
             return
         endif
 
         if exists('s:hover_popup') && s:hover_popup > 0
             call popup_close(s:hover_popup)
+
         endif
 
         let s:hover_popup = popup_create(l:lines, {
@@ -71,7 +73,7 @@ function! s:lsp_handle_hover(channel, msg) abort
 endfunction
 
 function! s:hover_popup_filter(popup_id, key) abort
-    if a:key =~# '\v(\<Esc\>|\cC|q)'
+    if a:key =~# '\v(\cC|q)'
         if exists('s:hover_popup') && s:hover_popup > 0
             call popup_close(s:hover_popup)
             let s:hover_popup = 0

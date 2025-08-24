@@ -1,4 +1,4 @@
-let s:config_path = fnamemodify($MYVIMRC, ':h')
+let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 
 " Global variable to store recent files in the session
