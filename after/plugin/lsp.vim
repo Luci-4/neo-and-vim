@@ -282,11 +282,17 @@ call ch_sendexpr(g:lsp_job, {
 \ })
 
 function! s:lsp_did_open() abort
-    echom 'opened'
+    if exists('b:lsp_opened') && b:lsp_opened
+        echom "already opened; don't open again"
+        return
+
+    endif
+    echom "opened" 
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
         return
     endif
+
 
     let lsp_msg = {
           \ 'jsonrpc': '2.0',
@@ -301,10 +307,10 @@ function! s:lsp_did_open() abort
           \ }
           \ }
     call ch_sendexpr(g:lsp_job, lsp_msg)
+    let b:lsp_opened = 1
 endfunction
 
 function! s:lsp_did_change() abort
-
     echom "changed file"
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
@@ -331,6 +337,26 @@ function! s:lsp_did_change() abort
 
     call ch_sendexpr(g:lsp_job, lsp_msg)
 endfunction
+
+function! s:lsp_did_close() abort
+    if !exists('b:lsp_opened') || !b:lsp_opened
+        return
+    endif
+
+    let lsp_msg = {
+          \ 'jsonrpc': '2.0',
+          \ 'method': 'textDocument/didClose',
+          \ 'params': {
+          \     'textDocument': { 'uri': s:lsp_text_document_uri() }
+          \ }
+          \ }
+
+    call ch_sendexpr(g:lsp_job, lsp_msg)
+
+    unlet b:lsp_opened
+endfunction
+
+autocmd BufUnload,BufDelete * call s:lsp_did_close()
 
 autocmd BufReadPost,BufNewFile * call s:lsp_did_open()
 
