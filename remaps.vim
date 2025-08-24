@@ -1,4 +1,4 @@
-let s:config_path = expand('~/vimfiles')
+let s:config_path = fnamemodify($MYVIMRC, ':h')
 execute 'source' s:config_path . '/spectroscope/files.vim'
 execute 'source' s:config_path . '/spectroscope/filter_files.vim'
 execute 'source' s:config_path . '/spectroscope/git.vim'
@@ -6,10 +6,6 @@ execute 'source' s:config_path . '/spectroscope/messages.vim'
 execute 'source' s:config_path . '/spectroscope/vimgrep.vim'
 
 let mapleader = "\<Space>"
-let VIMRC_PATH = expand('~/_vimrc')
-
-exec 'nnoremap <leader>ev :vsplit ' . VIMRC_PATH . '<CR>'
-exec 'nnoremap <leader>rr :source ' . VIMRC_PATH . '<CR>'
 
 nnoremap <Leader>fr :call ListRecentFilesInBuffer()<CR>
 nnoremap <Leader>gb :call ListBranches()<CR>

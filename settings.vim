@@ -1,4 +1,4 @@
-let s:config_path = expand('~/vimfiles')
+let s:config_path = fnamemodify($MYVIMRC, ':h')
 execute 'source' s:config_path . '/spectroscope/recent_files.vim'
 execute 'source' s:config_path . '/system_check.vim'
 

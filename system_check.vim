@@ -1,5 +1,3 @@
-let s:config_path = expand('~/vimfiles')
-
 function! IsOnLinux()
     return has('unix') && executable('uname') && system('uname -s') =~? '^linux'
 endfunction
