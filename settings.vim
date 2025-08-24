@@ -52,6 +52,7 @@ set encoding=utf-8
 set termguicolors
 colorscheme dogrun
 
+set laststatus=2
 set statusline=%f\ %y\ %=Ln:%l\ Col:%c
 set termguicolors
 highlight StatusLine ctermfg=White ctermbg=DarkBlue guifg=#ffffff guibg=#005f87

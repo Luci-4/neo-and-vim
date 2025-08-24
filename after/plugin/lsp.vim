@@ -11,13 +11,14 @@ function! LSPHover() abort
     \   'position': s:lsp_position()
     \ }
     \ }
-    echom "running hover with"
-    echom l:msg
     call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_hover')})
 endfunction
 
 function! s:lsp_handle_hover(channel, msg) abort
-    echom a:msg
+    if has_key(a:msg, 'error') && has_key(a:msg.error, 'message')
+        echoerr a:msg.error.message
+        return
+    endif
     if has_key(a:msg, 'result') && has_key(a:msg.result, 'contents')
         let l:contents = a:msg.result.contents
         let l:texts = []
@@ -46,7 +47,7 @@ function! s:lsp_handle_hover(channel, msg) abort
         let l:lines = map(l:lines, 'trim(v:val)')
 
         if empty(l:lines)
-            echom "No hover info (empty lines)"
+            echom "No hover info"
             return
         endif
 
@@ -90,11 +91,14 @@ function! s:lsp_position() abort
 endfunction
 
 function! s:lsp_text_document_uri() abort
-    return TernaryIfLinux('file://' . expand('%:p'), 'file:///' . substitute(expand('%:p'), '\\', '/', 'g'))
+    let l:path = TernaryIfLinux(expand('%:p'), substitute(expand('%:p'), '\\', '/', 'g')) 
+    if l:path ==# ''
+        return ''
+    endif
+    return TernaryIfLinux('file://' . l:path, 'file:///' . l:path)
 endfunction
 
 function! s:lsp_handle_definition(channel, msg) abort
-    echom a:msg
     if has_key(a:msg, 'result') && !empty(a:msg.result)
         let l:target = a:msg.result[0]
         let l:file = substitute(l:target.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
@@ -144,7 +148,6 @@ function! ShowDiagnostic(bufnr, diag) abort
     execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
 
 
-    echom string(l:sev) . " " . l:sign_text . " " . l:hl_group . " "  . " "  . l:msg 
     if !exists('g:lsp_diag_virtual_text_align')
         let g:lsp_diag_virtual_text_align = 'after'
     endif
@@ -199,8 +202,23 @@ function! s:on_lsp_msg(channel, msg) abort
     call s:handle_msg(a:channel, a:msg)
 endfunction
 
+function s:render_cached_diagnostics()
+    let l:current_bufnr = bufnr('%')
+
+    if !exists('b:diagnostics_cache')
+        echom "diagnostics cache not found"
+        return
+    endif
+    for d in b:diagnostics_cache
+        call ShowDiagnostic(l:current_bufnr, d)
+    endfor
+
+endfunction
+
 function! s:handle_msg(channel, msg) abort
     if has_key(a:msg, 'method') && a:msg.method ==# 'textDocument/publishDiagnostics'
+
+        echom a:msg
         let l:filename = substitute(a:msg.params.uri, '^'. TernaryIfLinux('file://', 'file:///'), '', '')
         let l:bufnr = bufnr(l:filename)
         if l:bufnr == -1
@@ -208,9 +226,11 @@ function! s:handle_msg(channel, msg) abort
         endif
         let l:diagnostics = a:msg.params.diagnostics
         echom 'Diagnostics for ' . l:filename . ': ' . string(l:diagnostics)
+
         for d in l:diagnostics
             call ShowDiagnostic(l:bufnr, d)
         endfor
+        let b:diagnostics_cache = l:diagnostics
     endif
 endfunction
 
@@ -275,26 +295,24 @@ let s:opts = {
       \ 'close_cb': function('s:on_lsp_exit')
       \ }
 
-
 function! s:lsp_did_open() abort
-    if exists('b:lsp_opened') && b:lsp_opened
-        echom "already opened; don't open again"
-        return
-
-    endif
     echom "opened" 
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
         return
     endif
 
-
+    let l:doc_uri = s:lsp_text_document_uri()
+    if l:doc_uri ==# ''
+        echom "uri empty"
+        return
+    endif
     let lsp_msg = {
           \ 'jsonrpc': '2.0',
           \ 'method': 'textDocument/didOpen',
           \ 'params': {
           \     'textDocument': {
-          \         'uri': s:lsp_text_document_uri(),
+          \         'uri': l:doc_uri,
           \         'languageId': 'cpp',
           \         'version': 1,
           \         'text': join(getbufline('%', 1, '$'), "\n")
@@ -306,7 +324,7 @@ function! s:lsp_did_open() abort
 endfunction
 
 function! s:lsp_did_change() abort
-    echom "changed file"
+    echom "changed"
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
         return
@@ -316,12 +334,19 @@ function! s:lsp_did_change() abort
     else 
         let s:lsp_version += 1 
     endif
+
+
+    let l:doc_uri = s:lsp_text_document_uri()
+    if l:doc_uri ==# ''
+        echom "uri empty"
+        return
+    endif
     let lsp_msg = {
           \ 'jsonrpc': '2.0',
           \ 'method': 'textDocument/didChange',
           \ 'params': {
           \     'textDocument': {
-          \         'uri': s:lsp_text_document_uri(),
+          \         'uri': l:doc_uri,
           \         'version': s:lsp_version
           \     },
           \     'contentChanges': [
@@ -329,8 +354,7 @@ function! s:lsp_did_change() abort
           \     ]
           \ }
           \ }
-
-    call ch_sendexpr(g:lsp_job, lsp_msg)
+     call ch_sendexpr(g:lsp_job, lsp_msg)
 endfunction
 
 function! s:lsp_did_close() abort
@@ -364,11 +388,11 @@ if executable('clangd')
         \ }
     \ })
 
-    autocmd BufUnload,BufDelete * call s:lsp_did_close()
+    " autocmd BufWipeout * call s:lsp_did_close()
 
     autocmd BufReadPost,BufNewFile * call s:lsp_did_open()
-
     autocmd TextChanged,TextChangedI * call s:lsp_did_change()
+    autocmd BufEnter * call s:render_cached_diagnostics()
 
     nnoremap gd :call LSPGoToDefintion()<CR>
     nnoremap gr :call LSPReferences()<CR>
