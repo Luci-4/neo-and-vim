@@ -361,13 +361,14 @@ if executable('clangd')
         \     'rootUri': 'file://' . getcwd()
         \ }
     \ })
+
+    autocmd BufUnload,BufDelete * call s:lsp_did_close()
+
+    autocmd BufReadPost,BufNewFile * call s:lsp_did_open()
+
+    autocmd TextChanged,TextChangedI * call s:lsp_did_change()
+
+    nnoremap gd :call LSPGoToDefintion()<CR>
+    nnoremap gr :call LSPReferences()<CR>
+    nnoremap K :call LSPHover()<CR>
 endif
-autocmd BufUnload,BufDelete * call s:lsp_did_close()
-
-autocmd BufReadPost,BufNewFile * call s:lsp_did_open()
-
-autocmd TextChanged,TextChangedI * call s:lsp_did_change()
-
-nnoremap gd :call LSPGoToDefintion()<CR>
-nnoremap gr :call LSPReferences()<CR>
-nnoremap K :call LSPHover()<CR>
