@@ -212,8 +212,11 @@ function! s:handle_msg(channel, msg) abort
     endif
 endfunction
 
-function! s:on_lsp_exit(channel, msg) abort
-    echom 'clangd exited: ' . a:msg
+function! s:on_lsp_exit(channel, ...) abort
+    echom 'clangd exited'
+    if a:0 > 0
+        echom 'msg: ' . string(a:1)
+    endif
 endfunction
 
 function! s:lsp_handle_references(channel, msg) abort
@@ -270,16 +273,6 @@ let s:opts = {
       \ 'close_cb': function('s:on_lsp_exit')
       \ }
 
-let g:lsp_job = job_start(['clangd', '--compile-commands-dir=build'], s:opts)
-call ch_sendexpr(g:lsp_job, {
-    \ 'jsonrpc': '2.0',
-    \ 'id': 1,
-    \ 'method': 'initialize',
-    \ 'params': {
-    \     'capabilities': {},
-    \     'rootUri': 'file://' . getcwd()
-    \ }
-\ })
 
 function! s:lsp_did_open() abort
     if exists('b:lsp_opened') && b:lsp_opened
@@ -356,6 +349,19 @@ function! s:lsp_did_close() abort
     unlet b:lsp_opened
 endfunction
 
+
+if executable('clangd')
+    let g:lsp_job = job_start(['clangd', '--compile-commands-dir=build'], s:opts)
+    call ch_sendexpr(g:lsp_job, {
+        \ 'jsonrpc': '2.0',
+        \ 'id': 1,
+        \ 'method': 'initialize',
+        \ 'params': {
+        \     'capabilities': {},
+        \     'rootUri': 'file://' . getcwd()
+        \ }
+    \ })
+endif
 autocmd BufUnload,BufDelete * call s:lsp_did_close()
 
 autocmd BufReadPost,BufNewFile * call s:lsp_did_open()
