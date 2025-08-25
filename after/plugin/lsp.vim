@@ -111,9 +111,138 @@ function! s:lsp_handle_definition(channel, msg) abort
     endif
 endfunction
 
+function s:generate_sign_cache_key(diag)
+    let l:props = s:get_diagnostic_props_from_severity(a:diag.severity)
+    let l:line = a:diag.range.end.line+1
+    return 'line='. l:line .' name='.l:props.sign_name
+endfunction
+
+function s:generate_virtual_text_cache_key(diag)
+    let l:props = s:get_diagnostic_props_from_severity(a:diag.severity)
+    let l:line = a:diag.range.end.line + 1
+    return 'line' . l:line .'type' . l:props.prop_type . 'text' . l:props.sign_text . " " . a:diag.message
+endfunction
+
+function! s:get_diagnostic_props_from_severity(sev) abort
+    if a:sev == 1
+        return {
+            \ 'sign_text': 'E',
+            \ 'hl_group': 'Error',
+            \ 'sign_name': 'LspDiagError',
+            \ 'prop_type': 'vim_lsp_virtual_text_error'
+        \ }
+    endif
+    if a:sev == 2
+        return {
+            \ 'sign_text': 'W',
+            \ 'hl_group': 'WarningMsg',
+            \ 'sign_name': 'LspDiagWarning',
+            \ 'prop_type': 'vim_lsp_virtual_text_warning'
+        \ }
+    endif
+    return {
+        \ 'sign_text': 'I',
+        \ 'hl_group': 'Todo',
+        \ 'sign_name': 'LspDiagInfo',
+        \ 'prop_type': 'vim_lsp_virtual_text_info'
+    \ }
+endfunction
+
+function s:delete_diag_prop_cache()
+    if exists('b:diag_cache_virtual_text')
+        let b:diag_cache_virtual_text = {}
+    endif
+    if exists('b:diag_cache_sign')
+        let b:diag_cache_sign = {}
+    endif
+endfunction
+function! ClearAllDiagnostics(buf)
+
+    let l:buf = a:buf
+    for key in keys(b:diag_cache_sign)
+        execute 'sign unplace '.b:diag_cache_sign[key].' buffer='.l:buf
+    endfor
+
+
+    for key in keys(b:diag_cache_virtual_text)
+        call prop_remove({'id': b:diag_cache_virtual_text[key], 'bufnr': l:buf})
+    endfor
+
+    " execute 'sign unplace * buffer=' . a:buf
+
+    " if exists('g:vim_lsp_virtual_text_type_defined')
+    "     for l:type in [
+    "         \ 'vim_lsp_virtual_text_error',
+    "         \ 'vim_lsp_virtual_text_warning',
+    "         \ 'vim_lsp_virtual_text_info'
+    "     \ ]
+    "         call prop_remove({'all': v:true, 'type': l:type, 'bufnr': a:buf})
+    "     endfor
+    " endif
+endfunction
+function! ClearExpiredDiagnostics(bufnr, diagnostics) abort
+    let l:buf = a:bufnr
+    if !exists('b:diag_cache_virtual_text')
+        let b:diag_cache_virtual_text = {}
+    endif
+    if !exists('b:diag_cache_sign')
+        let b:diag_cache_sign = {}
+    endif
+    call ProfileStart('ClearExpiredDiagnostics')
+
+    let l:new_diag_sign = {} 
+    let l:new_diag_virt = {} 
+    for diag in a:diagnostics
+        let l:cache_sign_key = s:generate_sign_cache_key(diag)
+        let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(diag)
+        let l:new_diag_sign[l:cache_sign_key] = 1
+        let l:new_diag_virt[l:cache_virtual_text_key] = 1
+    endfor
+
+    for key in keys(b:diag_cache_sign)
+        if !has_key(l:new_diag_sign, key)
+            execute 'sign unplace '.b:diag_cache_sign[key].' buffer='.l:buf
+        endif
+    endfor
+
+
+    for key in keys(b:diag_cache_virtual_text)
+        if !has_key(l:new_diag_virt, key)
+            call prop_remove({'id': b:diag_cache_virtual_text[key], 'bufnr': l:buf})
+        endif
+    endfor
+    
+
+    call ProfileEnd('ClearExpiredDiagnostics')
+endfunction
+
+
+if !exists('g:vim_lsp_virtual_text_type_defined')
+    call prop_type_add('vim_lsp_virtual_text_error', {
+        \ 'highlight': 'Error',
+        \ 'combine': 1,
+        \ 'priority': 10,
+        \ 'display': 'right_align'
+    \ })
+    call prop_type_add('vim_lsp_virtual_text_warning', {
+        \ 'highlight': 'WarningMsg',
+        \ 'combine': 1,
+        \ 'priority': 10,
+        \ 'display': 'right_align'
+    \ })
+    call prop_type_add('vim_lsp_virtual_text_info', {
+        \ 'highlight': 'Todo',
+        \ 'combine': 1,
+        \ 'priority': 10,
+        \ 'display': 'right_align'
+    \ })
+    let g:vim_lsp_virtual_text_type_defined = 1
+endif
 function! ShowDiagnostic(bufnr, diag) abort
+    call ProfileStart('ShowDiagnostic')
     if type(a:diag) != type({})
         echoerr "ShowDiagnostic expects a dictionary"
+        call ProfileEnd('ShowDiagnostic')
         return
     endif
 
@@ -121,22 +250,13 @@ function! ShowDiagnostic(bufnr, diag) abort
     let l:end_line  = a:diag.range.end.line + 1
     let l:msg       = a:diag.message
     let l:sev       = a:diag.severity
-    if l:sev == 1
-        let l:sign_text = "E"
-        let l:hl_group  = 'Error' 
-        let l:sign_name = 'LspDiagError'
-        let l:prop_type = 'vim_lsp_virtual_text_error'
-    elseif l:sev == 2
-        let l:hl_group  = 'WarningMsg'
-        let l:sign_text = "W"
-        let l:sign_name = 'LspDiagWarning'
-        let l:prop_type = 'vim_lsp_virtual_text_warning'
-    else
-        let l:hl_group  = 'Todo'
-        let l:sign_text = "I"
-        let l:sign_name = 'LspDiagInfo'
-        let l:prop_type = 'vim_lsp_virtual_text_info'
-    endif
+
+
+    let l:diag_props = s:get_diagnostic_props_from_severity(l:sev)
+    let l:sign_text = l:diag_props.sign_text
+    let l:hl_group  = l:diag_props.hl_group 
+    let l:sign_name = l:diag_props.sign_name
+    let l:prop_type = l:diag_props.prop_type
 
     if !exists('g:lsp_diag_signs_defined')
         execute 'sign define LspDiagError   text=E texthl=Error'
@@ -145,7 +265,14 @@ function! ShowDiagnostic(bufnr, diag) abort
         let g:lsp_diag_signs_defined = 1
     endif
 
-    execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
+
+    let l:cache_sign_key = s:generate_sign_cache_key(a:diag)
+
+    if !has_key(b:diag_cache_sign, l:cache_sign_key)
+        execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
+        let b:diag_cache_sign[l:cache_sign_key] = l:end_line
+    endif
+
 
 
     if !exists('g:lsp_diag_virtual_text_align')
@@ -158,40 +285,23 @@ function! ShowDiagnostic(bufnr, diag) abort
         let g:lsp_diag_virtual_text_wrap = 'wrap'
     endif
 
-    if !exists('g:vim_lsp_virtual_text_type_defined')
-        call prop_type_add('vim_lsp_virtual_text_error', {
-            \ 'highlight': 'Error',
-            \ 'combine': 1,
-            \ 'priority': 10,
-            \ 'display': 'right_align'
-        \ })
-        call prop_type_add('vim_lsp_virtual_text_warning', {
-            \ 'highlight': 'WarningMsg',
-            \ 'combine': 1,
-            \ 'priority': 10,
-            \ 'display': 'right_align'
-        \ })
-        call prop_type_add('vim_lsp_virtual_text_info', {
-            \ 'highlight': 'Todo',
-            \ 'combine': 1,
-            \ 'priority': 10,
-            \ 'display': 'right_align'
-        \ })
-        let g:vim_lsp_virtual_text_type_defined = 1
+
+    let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(a:diag)
+    if !has_key(b:diag_cache_virtual_text, l:cache_virtual_text_key)
+
+        let l:prop_id = prop_add(
+            \ l:end_line, 0,
+            \ {
+            \   'type': l:prop_type,
+            \   'text': l:sign_text . " " . l:msg,
+            \   'bufnr': l:buf,
+            \   'text_align': g:lsp_diag_virtual_text_align,
+            \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
+            \   'text_wrap': g:lsp_diag_virtual_text_wrap
+            \ })
+        let b:diag_cache_virtual_text[l:cache_virtual_text_key] = l:prop_id
     endif
-
-    call prop_remove({'all': v:true, 'type': l:prop_type, 'bufnr': l:buf}, l:end_line)
-
-    call prop_add(
-        \ l:end_line, 0,
-        \ {
-        \   'type': l:prop_type,
-        \   'text': l:sign_text . " " . l:msg,
-        \   'bufnr': l:buf,
-        \   'text_align': g:lsp_diag_virtual_text_align,
-        \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
-        \   'text_wrap': g:lsp_diag_virtual_text_wrap
-        \ })
+    call ProfileEnd('ShowDiagnostic')
 endfunction
 
 function! s:on_lsp_msg(channel, msg) abort
@@ -203,34 +313,48 @@ function! s:on_lsp_msg(channel, msg) abort
 endfunction
 
 function s:render_cached_diagnostics()
+    let l:found_missing = 0
     let l:current_bufnr = bufnr('%')
 
+    if exists("b:diag_cache_virtual_text")
+
+        let l:result_errors = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_warning"}) 
+        let l:result_warnings = prop_find({"bufnr": l:current_bufnr, "type":  "vim_lsp_virtual_text_warning"}) 
+        let l:result_info = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_info"}) 
+        if !empty(l:result_errors) || !empty(l:result_warnings) || !empty(l:result_info) 
+            return
+        endif
+    endif
+
     if !exists('b:diagnostics_cache')
-        echom "diagnostics cache not found"
         return
     endif
-    for d in b:diagnostics_cache
+    call ClearAllDiagnostics(l:current_bufnr)
+    call s:delete_diag_prop_cache()
+    let l:diagnostics_cache_copy = b:diagnostics_cache 
+    for d in l:diagnostics_cache_copy
         call ShowDiagnostic(l:current_bufnr, d)
     endfor
+
 
 endfunction
 
 function! s:handle_msg(channel, msg) abort
     if has_key(a:msg, 'method') && a:msg.method ==# 'textDocument/publishDiagnostics'
 
-        echom a:msg
         let l:filename = substitute(a:msg.params.uri, '^'. TernaryIfLinux('file://', 'file:///'), '', '')
         let l:bufnr = bufnr(l:filename)
         if l:bufnr == -1
             return
         endif
         let l:diagnostics = a:msg.params.diagnostics
-        echom 'Diagnostics for ' . l:filename . ': ' . string(l:diagnostics)
+
+        let b:diagnostics_cache = l:diagnostics
+        call ClearExpiredDiagnostics(l:bufnr, l:diagnostics)
 
         for d in l:diagnostics
             call ShowDiagnostic(l:bufnr, d)
         endfor
-        let b:diagnostics_cache = l:diagnostics
     endif
 endfunction
 
@@ -325,8 +449,10 @@ endfunction
 
 function! s:lsp_did_change() abort
     echom "changed"
+    call ProfileStart('lsp_did_change')
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
+        call ProfileEnd('lsp_did_change')
         return
     endif
     if !exists('s:lsp_version') 
@@ -339,6 +465,7 @@ function! s:lsp_did_change() abort
     let l:doc_uri = s:lsp_text_document_uri()
     if l:doc_uri ==# ''
         echom "uri empty"
+        call ProfileEnd('lsp_did_change')
         return
     endif
     let lsp_msg = {
@@ -355,6 +482,7 @@ function! s:lsp_did_change() abort
           \ }
           \ }
      call ch_sendexpr(g:lsp_job, lsp_msg)
+    call ProfileEnd('lsp_did_change')
 endfunction
 
 function! s:lsp_did_close() abort
