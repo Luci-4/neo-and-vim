@@ -111,6 +111,26 @@ function! s:lsp_handle_definition(channel, msg) abort
     endif
 endfunction
 
+function BufVarExists(bufnr, varname) abort
+    let l:val = getbufvar(a:bufnr, a:varname, v:null)
+    return l:val isnot v:null
+endfunction
+
+function BufVarDictSet(bufnr, varname, key, value) abort
+    let buf_dict = getbufvar(a:bufnr, a:varname, {})
+
+    if type(buf_dict) != type({})
+        echohl WarningMsg
+        echom 'Buffer variable '.a:varname.' is not a dictionary'
+        echohl None
+        return
+    endif
+
+    let buf_dict[a:key] = a:value
+
+    call setbufvar(a:bufnr, a:varname, buf_dict)
+endfunction
+
 function s:generate_sign_cache_key(diag)
     let l:props = s:get_diagnostic_props_from_severity(a:diag.severity)
     let l:line = a:diag.range.end.line+1
@@ -148,24 +168,26 @@ function! s:get_diagnostic_props_from_severity(sev) abort
     \ }
 endfunction
 
-function s:delete_diag_prop_cache()
-    if exists('b:diag_cache_virtual_text')
-        let b:diag_cache_virtual_text = {}
+function s:delete_diag_prop_cache(bufnr)
+    if BufVarExists(a:bufnr, 'diag_cache_virtual_text')
+        call setbufvar(a:bufnr, "diag_cache_virtual_text", {})
     endif
-    if exists('b:diag_cache_sign')
-        let b:diag_cache_sign = {}
+    if BufVarExists(a:bufnr, 'diag_cache_sign')
+        call setbufvar(a:bufnr, "diag_cache_sign", {}) 
     endif
 endfunction
 function! ClearAllDiagnostics(buf)
 
     let l:buf = a:buf
-    for key in keys(b:diag_cache_sign)
-        execute 'sign unplace '.b:diag_cache_sign[key].' buffer='.l:buf
+    let l:diag_cache_sign = getbufvar(l:buf, "diag_cache_sign")
+    for key in keys(l:diag_cache_sign)
+        execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
     endfor
 
 
-    for key in keys(b:diag_cache_virtual_text)
-        call prop_remove({'id': b:diag_cache_virtual_text[key], 'bufnr': l:buf})
+    let l:diag_cache_virtual_text = getbufvar(l:buf, "diag_cache_virtual_text")
+    for key in keys(l:diag_cache_virtual_text)
+        call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
     endfor
 
     " execute 'sign unplace * buffer=' . a:buf
@@ -182,11 +204,11 @@ function! ClearAllDiagnostics(buf)
 endfunction
 function! ClearExpiredDiagnostics(bufnr, diagnostics) abort
     let l:buf = a:bufnr
-    if !exists('b:diag_cache_virtual_text')
-        let b:diag_cache_virtual_text = {}
+    if !BufVarExists(l:buf, 'diag_cache_virtual_text')
+        call setbufvar(l:buf, "diag_cache_virtual_text", {})
     endif
-    if !exists('b:diag_cache_sign')
-        let b:diag_cache_sign = {}
+    if !BufVarExists(l:buf, 'diag_cache_sign')
+        call setbufvar(l:buf, "diag_cache_sign", {})
     endif
     call ProfileStart('ClearExpiredDiagnostics')
 
@@ -199,16 +221,18 @@ function! ClearExpiredDiagnostics(bufnr, diagnostics) abort
         let l:new_diag_virt[l:cache_virtual_text_key] = 1
     endfor
 
-    for key in keys(b:diag_cache_sign)
+    let l:diag_cache_sign = getbufvar(l:buf, "diag_cache_sign")
+    for key in keys(l:diag_cache_sign)
         if !has_key(l:new_diag_sign, key)
-            execute 'sign unplace '.b:diag_cache_sign[key].' buffer='.l:buf
+            execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
         endif
     endfor
 
 
-    for key in keys(b:diag_cache_virtual_text)
+    let l:diag_cache_virtual_text = getbufvar(l:buf, "diag_cache_virtual_text")
+    for key in keys(l:diag_cache_virtual_text)
         if !has_key(l:new_diag_virt, key)
-            call prop_remove({'id': b:diag_cache_virtual_text[key], 'bufnr': l:buf})
+            call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
         endif
     endfor
     
@@ -238,6 +262,7 @@ if !exists('g:vim_lsp_virtual_text_type_defined')
     \ })
     let g:vim_lsp_virtual_text_type_defined = 1
 endif
+
 function! ShowDiagnostic(bufnr, diag) abort
     call ProfileStart('ShowDiagnostic')
     if type(a:diag) != type({})
@@ -268,12 +293,10 @@ function! ShowDiagnostic(bufnr, diag) abort
 
     let l:cache_sign_key = s:generate_sign_cache_key(a:diag)
 
-    if !has_key(b:diag_cache_sign, l:cache_sign_key)
+    if !has_key(getbufvar(l:buf, "diag_cache_sign"), l:cache_sign_key)
         execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
-        let b:diag_cache_sign[l:cache_sign_key] = l:end_line
+        call BufVarDictSet(l:buf, "diag_cache_sign", l:cache_sign_key, l:end_line)
     endif
-
-
 
     if !exists('g:lsp_diag_virtual_text_align')
         let g:lsp_diag_virtual_text_align = 'after'
@@ -287,8 +310,10 @@ function! ShowDiagnostic(bufnr, diag) abort
 
 
     let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(a:diag)
-    if !has_key(b:diag_cache_virtual_text, l:cache_virtual_text_key)
+    if !has_key(getbufvar(l:buf, "diag_cache_virtual_text"), l:cache_virtual_text_key)
 
+        " echom "for bufname: " . bufname(l:buf) . " where line is: " . l:end_line . " max_line is " . line('$')
+        echom ">>>>>>>  set buffer: " . bufname(l:buf) . " actual buffer: " . bufname(bufnr("%"))
         let l:prop_id = prop_add(
             \ l:end_line, 0,
             \ {
@@ -299,7 +324,7 @@ function! ShowDiagnostic(bufnr, diag) abort
             \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
             \   'text_wrap': g:lsp_diag_virtual_text_wrap
             \ })
-        let b:diag_cache_virtual_text[l:cache_virtual_text_key] = l:prop_id
+        call BufVarDictSet(l:buf, "diag_cache_virtual_text", l:cache_virtual_text_key, l:prop_id)
     endif
     call ProfileEnd('ShowDiagnostic')
 endfunction
@@ -316,7 +341,7 @@ function s:render_cached_diagnostics()
     let l:found_missing = 0
     let l:current_bufnr = bufnr('%')
 
-    if exists("b:diag_cache_virtual_text")
+    if BufVarExists(l:current_bufnr, "diag_cache_virtual_text")
 
         let l:result_errors = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_warning"}) 
         let l:result_warnings = prop_find({"bufnr": l:current_bufnr, "type":  "vim_lsp_virtual_text_warning"}) 
@@ -326,13 +351,12 @@ function s:render_cached_diagnostics()
         endif
     endif
 
-    if !exists('b:diagnostics_cache')
+    if !BufVarExists(l:current_bufnr, 'diagnostics_cache')
         return
     endif
     call ClearAllDiagnostics(l:current_bufnr)
-    call s:delete_diag_prop_cache()
-    let l:diagnostics_cache_copy = b:diagnostics_cache 
-    for d in l:diagnostics_cache_copy
+    call s:delete_diag_prop_cache(l:current_bufnr)
+    for d in getbufvar(l:current_bufnr, "diagnostics_cache")
         call ShowDiagnostic(l:current_bufnr, d)
     endfor
 
@@ -349,7 +373,7 @@ function! s:handle_msg(channel, msg) abort
         endif
         let l:diagnostics = a:msg.params.diagnostics
 
-        let b:diagnostics_cache = l:diagnostics
+        call setbufvar(l:bufnr, "diagnostics_cache", l:diagnostics)
         call ClearExpiredDiagnostics(l:bufnr, l:diagnostics)
 
         for d in l:diagnostics
