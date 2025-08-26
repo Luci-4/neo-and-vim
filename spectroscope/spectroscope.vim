@@ -1,9 +1,9 @@
 function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...)
     let l:wrap = (a:0 >= 1 ? a:1 : 0)  " default = 0 (nowrap)
   if a:vertical
-    vertical keepalt enew
+    vertical keepjumps enew
   else
-    keepalt enew
+    keepjumps enew
   endif
 
   setlocal buftype=nofile

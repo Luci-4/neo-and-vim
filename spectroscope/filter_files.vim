@@ -1,7 +1,7 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
-execute 'source' s:config_path . '/files_utils.vim'
+execute 'source' s:config_path . './spectroscope/bind_groups.vim'
 
 let s:current_list = []
 let s:action_map = {}
@@ -54,5 +54,5 @@ function! ListFilesInBufferWithSearch()
   let l:full_paths = globpath(l:cwd, '**/*', 0, 1)
   let l:files = map(l:full_paths, {_, val -> fnamemodify(val, ':.' )})
 
-  call OpenSpecialListBufferWithSearch(l:files, {'<CR>': 'OpenFile', '<S-h>': 'OpenFileVSplitRight'}, 'filelist')
+  call OpenSpecialListBufferWithSearch(l:files, g:spectroscope_files_binds, 'filelist')
 endfunction

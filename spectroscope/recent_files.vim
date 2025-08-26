@@ -1,5 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
+execute 'source' s:config_path . './spectroscope/bind_groups.vim'
 
 " Global variable to store recent files in the session
 let g:recent_files = []
@@ -26,7 +27,7 @@ endfunction
 " Show recent files in a special buffer
 function! ListRecentFilesInBuffer()
   if !empty(g:recent_files)
-    call OpenSpecialListBuffer(g:recent_files, {'<CR>': 'OpenFile', '<S-h>': 'OpenFileVSplitRight'}, 'recentfiles', 0)
+    call OpenSpecialListBuffer(g:recent_files, g:spectroscope_files_binds, 'recentfiles', 0)
   endif
 endfunction
 
