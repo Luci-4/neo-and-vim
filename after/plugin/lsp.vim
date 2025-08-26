@@ -264,6 +264,8 @@ if !exists('g:vim_lsp_virtual_text_type_defined')
 endif
 
 function! ShowDiagnostic(bufnr, diag) abort
+
+    
     call ProfileStart('ShowDiagnostic')
     if type(a:diag) != type({})
         echoerr "ShowDiagnostic expects a dictionary"
@@ -273,6 +275,7 @@ function! ShowDiagnostic(bufnr, diag) abort
 
     let l:buf       = a:bufnr
     let l:end_line  = a:diag.range.end.line + 1
+    echom "showing diag, line: " . l:end_line . ": set buffer: (" . a:bufnr . ") " . bufname(a:bufnr) . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
     let l:msg       = a:diag.message
     let l:sev       = a:diag.severity
 
@@ -313,18 +316,20 @@ function! ShowDiagnostic(bufnr, diag) abort
     if !has_key(getbufvar(l:buf, "diag_cache_virtual_text"), l:cache_virtual_text_key)
 
         " echom "for bufname: " . bufname(l:buf) . " where line is: " . l:end_line . " max_line is " . line('$')
-        echom ">>>>>>>  set buffer: " . bufname(l:buf) . " actual buffer: " . bufname(bufnr("%"))
-        let l:prop_id = prop_add(
-            \ l:end_line, 0,
-            \ {
-            \   'type': l:prop_type,
-            \   'text': l:sign_text . " " . l:msg,
-            \   'bufnr': l:buf,
-            \   'text_align': g:lsp_diag_virtual_text_align,
-            \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
-            \   'text_wrap': g:lsp_diag_virtual_text_wrap
-            \ })
-        call BufVarDictSet(l:buf, "diag_cache_virtual_text", l:cache_virtual_text_key, l:prop_id)
+        echom "displaying new virt: set buffer: (" . l:buf . ") " . bufname(l:buf) . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
+        if bufloaded(l:buf)
+            let l:prop_id = prop_add(
+                \ l:end_line, 0,
+                \ {
+                \   'type': l:prop_type,
+                \   'text': l:sign_text . " " . l:msg,
+                \   'bufnr': l:buf,
+                \   'text_align': g:lsp_diag_virtual_text_align,
+                \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
+                \   'text_wrap': g:lsp_diag_virtual_text_wrap
+                \ })
+            call BufVarDictSet(l:buf, "diag_cache_virtual_text", l:cache_virtual_text_key, l:prop_id)
+        endif
     endif
     call ProfileEnd('ShowDiagnostic')
 endfunction
@@ -368,6 +373,8 @@ function! s:handle_msg(channel, msg) abort
 
         let l:filename = substitute(a:msg.params.uri, '^'. TernaryIfLinux('file://', 'file:///'), '', '')
         let l:bufnr = bufnr(l:filename)
+
+        echom "handle_msg" . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%")) . " in message: (" . l:bufnr . ") " . l:filename
         if l:bufnr == -1
             return
         endif
@@ -444,7 +451,8 @@ let s:opts = {
       \ }
 
 function! s:lsp_did_open() abort
-    echom "opened" 
+
+    echom "opened" . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
         return
@@ -472,7 +480,7 @@ function! s:lsp_did_open() abort
 endfunction
 
 function! s:lsp_did_change() abort
-    echom "changed"
+    echom "changed" . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
     call ProfileStart('lsp_did_change')
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
