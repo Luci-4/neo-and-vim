@@ -275,7 +275,6 @@ function! ShowDiagnostic(bufnr, diag) abort
 
     let l:buf       = a:bufnr
     let l:end_line  = a:diag.range.end.line + 1
-    echom "showing diag, line: " . l:end_line . ": set buffer: (" . a:bufnr . ") " . bufname(a:bufnr) . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
     let l:msg       = a:diag.message
     let l:sev       = a:diag.severity
 
@@ -315,8 +314,6 @@ function! ShowDiagnostic(bufnr, diag) abort
     let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(a:diag)
     if !has_key(getbufvar(l:buf, "diag_cache_virtual_text"), l:cache_virtual_text_key)
 
-        " echom "for bufname: " . bufname(l:buf) . " where line is: " . l:end_line . " max_line is " . line('$')
-        echom "displaying new virt: set buffer: (" . l:buf . ") " . bufname(l:buf) . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
         if bufloaded(l:buf)
             let l:prop_id = prop_add(
                 \ l:end_line, 0,
@@ -374,7 +371,6 @@ function! s:handle_msg(channel, msg) abort
         let l:filename = substitute(a:msg.params.uri, '^'. TernaryIfLinux('file://', 'file:///'), '', '')
         let l:bufnr = bufnr(l:filename)
 
-        echom "handle_msg" . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%")) . " in message: (" . l:bufnr . ") " . l:filename
         if l:bufnr == -1
             return
         endif
@@ -480,7 +476,6 @@ function! s:lsp_did_open() abort
 endfunction
 
 function! s:lsp_did_change() abort
-    echom "changed" . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
     call ProfileStart('lsp_did_change')
     if !exists('g:lsp_job')
         echom "No g:lsp_job"

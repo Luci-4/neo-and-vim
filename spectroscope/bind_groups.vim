@@ -1,6 +1,7 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
 execute 'source' s:config_path . '/files_utils.vim'
+execute 'source' s:config_path . '/spectroscope/files_utils.vim'
 
 let g:spectroscope_files_binds = {
     \'<CR>': 'OpenFile', 
