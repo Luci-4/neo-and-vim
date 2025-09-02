@@ -1,5 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/system_check.vim'
+let g:lsp_file_patterns = ['*.c', '*.cpp', '*.h', '*.hpp']
 
 function! LSPHover() abort
     let l:msg = {
@@ -545,9 +546,14 @@ if executable('clangd')
 
     " autocmd BufWipeout * call s:lsp_did_close()
 
-    autocmd BufReadPost,BufNewFile * call s:lsp_did_open()
-    autocmd TextChanged,TextChangedI * call s:lsp_did_change()
-    autocmd BufEnter * call s:render_cached_diagnostics()
+    augroup MyLSP
+      autocmd!
+      for pat in g:lsp_file_patterns
+        execute 'autocmd BufReadPost,BufNewFile ' . pat . ' call s:lsp_did_open()'
+        execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:lsp_did_change()'
+        execute 'autocmd BufEnter ' . pat . ' call s:render_cached_diagnostics()'
+      endfor
+    augroup END
 
     nnoremap gd :call LSPGoToDefintion()<CR>
     nnoremap gr :call LSPReferences()<CR>
