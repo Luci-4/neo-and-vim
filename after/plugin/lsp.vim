@@ -2,6 +2,116 @@ let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/system_check.vim'
 let g:lsp_file_patterns = ['*.c', '*.cpp', '*.h', '*.hpp']
 
+let g:files_project_graph = {}
+
+
+let s:pending_symbols = []
+
+function! s:project_graph_process_next_symbol_references(uri)
+    if empty(s:pending_symbols)
+        return 
+    endif
+    let sym = remove(s:pending_symbols, 0)
+    echom sym.name
+    let l:line = sym.selectionRange.start.line
+    let l:col  = sym.selectionRange.start.character
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 3,
+    \ 'method': 'textDocument/references',
+    \ 'params': {
+    \   'textDocument': {'uri': a:uri},
+    \   'position': {'line': l:line, 'character': l:col},
+    \   'context': {'includeDeclaration': v:false}
+    \ }
+    \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:project_graph_handle_references', [a:uri])})
+endfunction
+
+function! s:project_graph_handle_references(uri, channel, msg)
+    if has_key(a:msg, 'result') && !empty(a:msg.result)
+        for ref in a:msg.result
+            let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
+            echom ref
+            " let l:line = ref.range.start.line + 1
+            " let l:col  = ref.range.start.character + 1
+        endfor
+        echom "---------"
+    else
+        echom "        No references found"
+    endif
+    call s:project_graph_process_next_symbol_references(a:uri)
+endfunction
+
+function! s:project_graph_add_references(uri)
+    let s:pending_symbols = g:files_project_graph[a:uri]['symbols_and_references']
+    call s:project_graph_process_next_symbol_references(a:uri)
+endfunction
+
+function! s:project_graph_handle_document_symbols(uri, channel, msg)
+    if has_key(a:msg, 'result') && !empty(a:msg.result)
+        echom a:channel
+        echom a:msg
+        for sym in a:msg.result
+            call add(g:files_project_graph[a:uri]['symbols_and_references'], sym)
+        endfor
+        call s:project_graph_add_references(a:uri)
+    else
+        echom "No document symbols found"
+    endif
+endfunction
+
+function! s:init_partial_graph_table_for_uri(uri)
+    let g:files_project_graph[a:uri] = {
+        \'symbols_and_references': [],
+        \'used': {}
+        \}
+endfunction
+
+function! ShowPartialProjectGraph()
+    let l:uri = s:lsp_text_document_uri()
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 5,
+    \ 'method': 'textDocument/documentSymbol',
+    \ 'params': {
+    \   'textDocument': {'uri': l:uri}
+    \ }
+    \ }
+    call s:init_partial_graph_table_for_uri(l:uri)
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:project_graph_handle_document_symbols', [l:uri])})
+endfunction
+
+function! s:lsp_handle_document_symbols(channel, msg) abort
+    if has_key(a:msg, 'result') && !empty(a:msg.result)
+        new
+        setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+        call setline(1, ['Document Symbols:'])
+        for sym in a:msg.result
+            let l:name = get(sym, 'name', '')
+            let l:kind = get(sym, 'kind', '')
+            let l:line = sym.selectionRange.start.line + 1
+            let l:col  = sym.selectionRange.start.character + 1
+            call append('$', l:name . ' [' . l:kind . '] ' . ':' . l:line . ':' . l:col)
+        endfor
+        normal! gg
+    else
+        echom "No document symbols found"
+    endif
+endfunction
+
+function! LSPDocumentSymbols() abort
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 5,
+    \ 'method': 'textDocument/documentSymbol',
+    \ 'params': {
+    \   'textDocument': {'uri': s:lsp_text_document_uri()}
+    \ }
+    \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_document_symbols')})
+endfunction
+
 function! LSPHover() abort
     let l:msg = {
     \ 'jsonrpc': '2.0',
@@ -435,6 +545,7 @@ function! LSPReferences() abort
     \   'context': {'includeDeclaration': v:true}
     \ }
     \ }
+    echom l:msg
     call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_references')})
 endfunction
 
@@ -449,7 +560,6 @@ let s:opts = {
 
 function! s:lsp_did_open() abort
 
-    echom "opened" . " actual buffer: (" . bufnr("%") . ") " . bufname(bufnr("%"))
     if !exists('g:lsp_job')
         echom "No g:lsp_job"
         return
@@ -539,7 +649,13 @@ if executable('clangd')
         \ 'id': 1,
         \ 'method': 'initialize',
         \ 'params': {
-        \     'capabilities': {},
+        \     'capabilities': {
+        \       "textDocument": {
+        \           "documentSymbol": {
+        \               "hierarchicalDocumentSymbolSupport": v:true
+        \           }
+        \       }
+        \       },
         \     'rootUri': 'file://' . getcwd()
         \ }
     \ })
@@ -558,4 +674,7 @@ if executable('clangd')
     nnoremap gd :call LSPGoToDefintion()<CR>
     nnoremap gr :call LSPReferences()<CR>
     nnoremap K :call LSPHover()<CR>
+    nnoremap <leader>ds :call LSPDocumentSymbols()<CR>
+    nnoremap <leader>pg :call ShowPartialProjectGraph()<CR>
 endif
+
