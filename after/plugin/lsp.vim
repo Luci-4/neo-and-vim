@@ -3,16 +3,16 @@ execute 'source' s:config_path . '/system_check.vim'
 let g:lsp_file_patterns = ['*.c', '*.cpp', '*.h', '*.hpp']
 
 let g:files_project_graph = {}
-
+let g:breadcrumbs = "__"
 
 let s:pending_symbols = []
 
 function! s:project_graph_process_next_symbol_references(uri)
     if empty(s:pending_symbols)
+        echom g:files_project_graph
         return 
     endif
     let sym = remove(s:pending_symbols, 0)
-    echom sym.name
     let l:line = sym.selectionRange.start.line
     let l:col  = sym.selectionRange.start.character
     let l:msg = {
@@ -25,18 +25,22 @@ function! s:project_graph_process_next_symbol_references(uri)
     \   'context': {'includeDeclaration': v:false}
     \ }
     \ }
-    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:project_graph_handle_references', [a:uri])})
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:project_graph_handle_references', [a:uri, sym])})
 endfunction
 
-function! s:project_graph_handle_references(uri, channel, msg)
+function! s:project_graph_handle_references(uri, sym, channel, msg)
+
+    let l:sym = a:sym 
+    let l:sym["references"] = []
     if has_key(a:msg, 'result') && !empty(a:msg.result)
         for ref in a:msg.result
-            let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
-            echom ref
+            " let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
+            call add(l:sym["references"], ref)
             " let l:line = ref.range.start.line + 1
             " let l:col  = ref.range.start.character + 1
         endfor
-        echom "---------"
+
+        call add(g:files_project_graph[a:uri]['symbols_and_references'], sym)
     else
         echom "        No references found"
     endif
@@ -44,16 +48,13 @@ function! s:project_graph_handle_references(uri, channel, msg)
 endfunction
 
 function! s:project_graph_add_references(uri)
-    let s:pending_symbols = g:files_project_graph[a:uri]['symbols_and_references']
     call s:project_graph_process_next_symbol_references(a:uri)
 endfunction
 
 function! s:project_graph_handle_document_symbols(uri, channel, msg)
     if has_key(a:msg, 'result') && !empty(a:msg.result)
-        echom a:channel
-        echom a:msg
         for sym in a:msg.result
-            call add(g:files_project_graph[a:uri]['symbols_and_references'], sym)
+            call add(s:pending_symbols, sym)
         endfor
         call s:project_graph_add_references(a:uri)
     else
@@ -80,6 +81,110 @@ function! ShowPartialProjectGraph()
     \ }
     call s:init_partial_graph_table_for_uri(l:uri)
     call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:project_graph_handle_document_symbols', [l:uri])})
+endfunction
+
+function! s:compose_scope(sym, scope, pos)
+    let l:scope = a:scope
+    let l:pos = a:pos
+    if has_key(a:sym, 'children')  
+        for el in a:sym.children
+            let l:start = el.range.start
+            let l:end = el.range.end
+            if l:pos.line < l:start.line || l:pos.line > l:end.line
+                continue
+            endif
+            if l:pos.line == l:start.line && l:pos.character < l:start.character
+                continue
+            endif
+            if l:pos.line == l:end.line && l:pos.character > l:end.character
+                continue
+            endif
+            call add(l:scope, el)
+            return s:compose_scope(el, l:scope, l:pos)
+            break
+        endfor
+    endif
+
+    return l:scope
+endfunction
+
+function! s:find_immediate_scope(uri, channel, msg)
+    let l:pos = s:lsp_position()
+    if has_key(a:msg, 'result') && !empty(a:msg.result)
+        let l:scope = []
+        for sym in a:msg.result
+            let l:start = sym.range.start
+            let l:end = sym.range.end
+            if l:pos.line < l:start.line || l:pos.line > l:end.line
+                continue
+            endif
+            if l:pos.line == l:start.line && l:pos.character < l:start.character
+                continue
+            endif
+            if l:pos.line == l:end.line && l:pos.character > l:end.character
+                continue
+            endif
+        endfor
+    else
+        echom "No document symbols found"
+    endif
+
+endfunction
+
+function! FindImmediateScope()
+    let l:uri = s:lsp_text_document_uri()
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 5,
+    \ 'method': 'textDocument/documentSymbol',
+    \ 'params': {
+    \   'textDocument': {'uri': l:uri}
+    \ }
+    \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:find_immediate_scope', [l:uri])})
+endfunction
+
+
+function! s:update_statusline_with_scope(uri, channel, msg)
+    let l:pos = s:lsp_position()
+    let l:scope = []
+    if has_key(a:msg, 'result') && !empty(a:msg.result)
+        for sym in a:msg.result
+            let l:start = sym.range.start
+            let l:end = sym.range.end
+            if l:pos.line < l:start.line || l:pos.line > l:end.line
+                continue
+            endif
+            if l:pos.line == l:start.line && l:pos.character < l:start.character
+                continue
+            endif
+            if l:pos.line == l:end.line && l:pos.character > l:end.character
+                continue
+            endif
+            call add(l:scope, sym)
+
+            
+            let l:final_scope = s:compose_scope(sym, l:scope, l:pos) 
+            let g:breadcrumbs = join(map(copy(l:final_scope), 'v:val.name'), '>')
+            set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
+
+
+            break
+        endfor
+    endif
+endfunction
+
+function! UpdateStatuslineWithScope()
+    let l:uri = s:lsp_text_document_uri()
+    let l:msg = {
+    \ 'jsonrpc': '2.0',
+    \ 'id': 5,
+    \ 'method': 'textDocument/documentSymbol',
+    \ 'params': {
+    \   'textDocument': {'uri': l:uri}
+    \ }
+    \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:update_statusline_with_scope', [l:uri])})
 endfunction
 
 function! s:lsp_handle_document_symbols(channel, msg) abort
@@ -667,7 +772,9 @@ if executable('clangd')
       for pat in g:lsp_file_patterns
         execute 'autocmd BufReadPost,BufNewFile ' . pat . ' call s:lsp_did_open()'
         execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:lsp_did_change()'
+        execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:update_status_line()'
         execute 'autocmd BufEnter ' . pat . ' call s:render_cached_diagnostics()'
+        execute 'autocmd BufEnter,CursorMoved,WinEnter,VimResized '  . pat .  ' call UpdateStatuslineWithScope()'
       endfor
     augroup END
 
@@ -676,5 +783,6 @@ if executable('clangd')
     nnoremap K :call LSPHover()<CR>
     nnoremap <leader>ds :call LSPDocumentSymbols()<CR>
     nnoremap <leader>pg :call ShowPartialProjectGraph()<CR>
+    nnoremap <leader>sc :call UpdateStatuslineWithScope()<CR>
 endif
 

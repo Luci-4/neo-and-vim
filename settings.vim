@@ -53,7 +53,7 @@ set termguicolors
 colorscheme dogrun
 
 set laststatus=2
-set statusline=%f\ %y\ %=Ln:%l\ Col:%c
+" set statusline=%f\ %y\ %=Ln:%l\ Col:%c
 set termguicolors
 highlight StatusLine ctermfg=White ctermbg=DarkBlue guifg=#ffffff guibg=#005f87
 highlight StatusLineNC ctermfg=Grey ctermbg=DarkGrey
@@ -101,3 +101,9 @@ augroup END
 
 autocmd FileType python setlocal tabstop=4 shiftwidth=4
 set signcolumn=yes
+
+function! SetStatusLine()
+    set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
+endfunction
+
+autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
