@@ -7,6 +7,63 @@ let g:breadcrumbs = "__"
 
 let s:pending_symbols = []
 
+function! FormatSymbolForBreadcrumbs(name, kind) abort
+  " Namespace
+  if a:kind == 3
+    if a:name ==# '(anonymous namespace)'
+      let display = '{} namespace'
+    else
+      let display = '{} ' . a:name
+    endif
+
+  " Class
+  elseif a:kind == 5
+    let display = 'Cls ' . a:name
+
+  " Struct
+  elseif a:kind == 23
+    let display = 'Str ' . a:name
+
+  " Method
+  elseif a:kind == 6
+    let display = '∙ƒ ' . a:name
+
+  " Function
+  elseif a:kind == 12
+    let display = 'ƒ ' . a:name
+
+  " Property / Field
+  elseif a:kind == 7 || a:kind == 8
+    let display = '∙' . a:name
+
+  " Constructor
+  elseif a:kind == 9
+    let display = '∙ƒ! ' . a:name
+
+  " Enum
+  elseif a:kind == 10
+    let display = '∈ ' . a:name
+
+  " EnumMember
+  elseif a:kind == 22
+    let display = '∙' . a:name
+
+  " Constant / Macro
+  elseif a:kind == 14
+    let display = '≡ ' . a:name
+
+  " Variable
+  elseif a:kind == 13
+    let display = '𝑥 ' . a:name
+
+  " Default fallback
+  else
+    let display = a:name
+  endif
+
+  return display
+endfunction
+
 function! s:project_graph_process_next_symbol_references(uri)
     if empty(s:pending_symbols)
         echom g:files_project_graph
@@ -145,6 +202,7 @@ function! FindImmediateScope()
 endfunction
 
 
+" Set statusline to call the function
 function! s:update_statusline_with_scope(uri, channel, msg)
     let l:pos = s:lsp_position()
     let l:scope = []
@@ -165,9 +223,10 @@ function! s:update_statusline_with_scope(uri, channel, msg)
 
             
             let l:final_scope = s:compose_scope(sym, l:scope, l:pos) 
-            let g:breadcrumbs = join(map(copy(l:final_scope), 'v:val.name'), '>')
-            set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
+            " let g:breadcrumbs = join(map(copy(l:final_scope), 'v:val.name'), '>')
+            let g:breadcrumbs = join(map(copy(l:final_scope), 'FormatSymbolForBreadcrumbs(v:val.name, v:val.kind)'), ' > ')
 
+            set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
 
             break
         endfor
@@ -772,9 +831,8 @@ if executable('clangd')
       for pat in g:lsp_file_patterns
         execute 'autocmd BufReadPost,BufNewFile ' . pat . ' call s:lsp_did_open()'
         execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:lsp_did_change()'
-        execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:update_status_line()'
         execute 'autocmd BufEnter ' . pat . ' call s:render_cached_diagnostics()'
-        execute 'autocmd BufEnter,CursorMoved,WinEnter,VimResized '  . pat .  ' call UpdateStatuslineWithScope()'
+        execute 'autocmd BufEnter,CursorMoved,WinEnter,VimResized,TextChanged,TextChangedI '  . pat .  ' call UpdateStatuslineWithScope()'
       endfor
     augroup END
 
