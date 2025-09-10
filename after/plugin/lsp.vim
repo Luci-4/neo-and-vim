@@ -277,6 +277,7 @@ function! LSPDocumentSymbols() abort
 endfunction
 
 function! LSPHover() abort
+    " echom  {'textDocument': {'uri': s:lsp_text_document_uri()}, 'position': s:lsp_position()}
     let l:msg = {
                 \ 'jsonrpc': '2.0',
                 \ 'id': 4,
@@ -294,7 +295,7 @@ function! s:lsp_handle_hover(channel, msg) abort
         echoerr a:msg.error.message
         return
     endif
-    if has_key(a:msg, 'result') && has_key(a:msg.result, 'contents')
+    if has_key(a:msg, 'result') && type(a:msg.result) == type({}) && has_key(a:msg.result, 'contents')
         let l:contents = a:msg.result.contents
         let l:texts = []
 

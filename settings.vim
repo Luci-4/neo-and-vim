@@ -50,7 +50,7 @@ set mouse=a
 " Set the default file encoding
 set encoding=utf-8
 set termguicolors
-colorscheme punk
+colorscheme shado
 
 set laststatus=2
 " set statusline=%f\ %y\ %=Ln:%l\ Col:%c
