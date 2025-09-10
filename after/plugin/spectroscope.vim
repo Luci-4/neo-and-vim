@@ -7,7 +7,7 @@ function! AsyncCacheFiles() abort
 endfunction
 
 function! s:GenerateFileCache() abort
-    let g:files_cached = FindFilesInCWDSystemBased([])
+    let g:files_cached = FindFilesInCWDSystemBased(g:files_blacklist)
     echom 'Files cached: ' . len(g:files_cached)
 endfunction
 
