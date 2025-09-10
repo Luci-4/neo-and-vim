@@ -1,7 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/settings.vim'
 execute 'source' s:config_path . '/remaps.vim'
-execute 'source' s:config_path . '/profiler.vim'
 
 function! SetStatusLine()
     set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c

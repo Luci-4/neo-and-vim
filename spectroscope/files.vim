@@ -52,21 +52,10 @@ function! FindFiles()
         echo "No files found in current directory."
     endif
 endfunction
-
 function! FindFilesWithFilter()
-    let l:files = copy(g:files_cached)
-
-    " if executable('find')
-    "     try
-    "         let l:files = split(system('find '.shellescape(getcwd()).' -type f'), "\n")
-    "     catch
-    "         let l:files = []
-    "     endtry
-    " endif
-
+    let l:files = g:files_cached
     if empty(l:files)
-        let l:full_paths = globpath(getcwd(), '**/*.*', 0, 1)
-        let l:files = map(l:full_paths, {_, val -> fnamemodify(val, ':.' )})
+        let l:files = FindFilesInCWDSystemBased([])
     endif
 
     if !empty(l:files)

@@ -20,33 +20,52 @@ function! OpenFileExternally(file)
     echo "Opened " . l:file . " externally"
 endfunction
 
-function! s:find_files_in_cwd_windows_cmd(blacklist) abort
-    let l:cwd = getcwd()
-    let l:pattern = join(map(copy(a:blacklist), 'escape(v:val, ".")'), '\|')
-    let l:cmd = 'cmd /v /c "for /r ""'.l:cwd.'"" %F in (*) do @set "rel=%F" & echo !rel:'.l:cwd.'\=!"" | findstr /i /v /r ""'.l:pattern.'"""'
-    echom l:cmd
-    let l:result = systemlist(l:cmd)
-    return l:result
-endfunction
 
+function! s:ExcludeArgs(tool, blacklist)
+    let l:blacklist = a:blacklist
+    let l:args = ''
+    for item in l:blacklist
+        if a:tool ==# 'fd'
+            let l:args .= ' --exclude ' . shellescape(item)
+        elseif a:tool ==# 'rg'
+            let l:args .= ' --glob ' . shellescape('!' . item)
+        elseif a:tool ==# 'find'
+            let l:args .= ' ! -path ' . shellescape('*' . item . '*')
+        endif
+    endfor
+    return l:args
+endfunction
 
 function! FindFilesInCWDSystemBased(blacklist)
     let l:root = getcwd()
     let l:blacklist = a:blacklist
+    let l:files = []
+
 
     if IsOnLinux()
-        if executable('find')
-            let l:exclude = join(map(copy(l:blacklist), {idx, val -> "-not -name '".val."'"}), ' ')
-            let l:cmd = printf("find %s -type f %s -name '%s'", shellescape(l:root), l:exclude, '**/*')
-            return systemlist(l:cmd)
+        if executable('fd')
+            let l:exclude = s:ExcludeArgs('fd', l:blacklist)
+            let l:files = split(system('fd . --type f --hidden --follow' . l:exclude . '--base-directory ' . shellescape(l:root)), "\n")
+            return l:files
+        elseif executable('rg')
+            let l:exclude = s:ExcludeArgs('rg', l:blacklist)
+            let l:files = split(system('rg --files --hidden --follow ' . l:exclude . ' ' . shellescape(l:root)), "\n")
+            return l:files
+        elseif executable('find')
+            let l:exclude = s:ExcludeArgs('find', l:blacklist)
+            let l:files = split(system('find ' . shellescape(l:root) . ' -type f' . l:exclude), "\n")
+            return l:files
         endif
     elseif IsOnWindows()
-        if executable('powershell')
-            return s:find_files_in_cwd_windows_cmd(l:blacklist)
+        if executable('fd')
+            let l:exclude = s:ExcludeArgs('fd', l:blacklist)
+
+            let l:files = split(system('fd . --type f --hidden --follow' . l:exclude . ' --base-directory ' . shellescape(l:root)), "\n")
+            return l:files
         endif
     endif
 
-    let l:files = globpath(l:root, '**/*', 0, 1)
+    let l:files = globpath(l:root, '**/*', 0, 1) 
     if !empty(l:blacklist)
         let l:files = filter(copy(l:files), 'empty(filter(l:blacklist, "match(v:val, v:val1)"))')
     endif
