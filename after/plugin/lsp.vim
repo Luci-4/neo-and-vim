@@ -453,384 +453,493 @@ function s:delete_diag_prop_cache(bufnr)
 endfunction
 function! ClearAllDiagnostics(buf)
 
-    let l:buf = a:buf
+let l:buf = a:buf
+let l:diag_cache_sign = getbufvar(l:buf, "diag_cache_sign")
+for key in keys(l:diag_cache_sign)
+    execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
+endfor
+
+
+let l:diag_cache_virtual_text = getbufvar(l:buf, "diag_cache_virtual_text")
+for key in keys(l:diag_cache_virtual_text)
+    call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
+endfor
+
+" execute 'sign unplace * buffer=' . a:buf
+
+" if exists('g:vim_lsp_virtual_text_type_defined')
+"     for l:type in [
+    "         \ 'vim_lsp_virtual_text_error',
+    "         \ 'vim_lsp_virtual_text_warning',
+    "         \ 'vim_lsp_virtual_text_info'
+    "     \ ]
+    "         call prop_remove({'all': v:true, 'type': l:type, 'bufnr': a:buf})
+    "     endfor
+    " endif
+endfunction
+function! ClearExpiredDiagnostics(bufnr, diagnostics) abort
+    let l:buf = a:bufnr
+    if !BufVarExists(l:buf, 'diag_cache_virtual_text')
+        call setbufvar(l:buf, "diag_cache_virtual_text", {})
+    endif
+    if !BufVarExists(l:buf, 'diag_cache_sign')
+        call setbufvar(l:buf, "diag_cache_sign", {})
+    endif
+
+    let l:new_diag_sign = {} 
+    let l:new_diag_virt = {} 
+    for diag in a:diagnostics
+        let l:cache_sign_key = s:generate_sign_cache_key(diag)
+        let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(diag)
+        let l:new_diag_sign[l:cache_sign_key] = 1
+        let l:new_diag_virt[l:cache_virtual_text_key] = 1
+    endfor
+
     let l:diag_cache_sign = getbufvar(l:buf, "diag_cache_sign")
     for key in keys(l:diag_cache_sign)
-        execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
+        if !has_key(l:new_diag_sign, key)
+            execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
+        endif
     endfor
 
 
     let l:diag_cache_virtual_text = getbufvar(l:buf, "diag_cache_virtual_text")
     for key in keys(l:diag_cache_virtual_text)
-        call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
+        if !has_key(l:new_diag_virt, key)
+            call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
+        endif
     endfor
 
-    " execute 'sign unplace * buffer=' . a:buf
 
-    " if exists('g:vim_lsp_virtual_text_type_defined')
-    "     for l:type in [
-        "         \ 'vim_lsp_virtual_text_error',
-        "         \ 'vim_lsp_virtual_text_warning',
-        "         \ 'vim_lsp_virtual_text_info'
-        "     \ ]
-        "         call prop_remove({'all': v:true, 'type': l:type, 'bufnr': a:buf})
-        "     endfor
-        " endif
-    endfunction
-    function! ClearExpiredDiagnostics(bufnr, diagnostics) abort
-        let l:buf = a:bufnr
-        if !BufVarExists(l:buf, 'diag_cache_virtual_text')
-            call setbufvar(l:buf, "diag_cache_virtual_text", {})
-        endif
-        if !BufVarExists(l:buf, 'diag_cache_sign')
-            call setbufvar(l:buf, "diag_cache_sign", {})
-        endif
-
-        let l:new_diag_sign = {} 
-        let l:new_diag_virt = {} 
-        for diag in a:diagnostics
-            let l:cache_sign_key = s:generate_sign_cache_key(diag)
-            let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(diag)
-            let l:new_diag_sign[l:cache_sign_key] = 1
-            let l:new_diag_virt[l:cache_virtual_text_key] = 1
-        endfor
-
-        let l:diag_cache_sign = getbufvar(l:buf, "diag_cache_sign")
-        for key in keys(l:diag_cache_sign)
-            if !has_key(l:new_diag_sign, key)
-                execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
-            endif
-        endfor
+endfunction
 
 
-        let l:diag_cache_virtual_text = getbufvar(l:buf, "diag_cache_virtual_text")
-        for key in keys(l:diag_cache_virtual_text)
-            if !has_key(l:new_diag_virt, key)
-                call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
-            endif
-        endfor
+if !exists('g:vim_lsp_virtual_text_type_defined')
+    call prop_type_add('vim_lsp_virtual_text_error', {
+                \ 'highlight': 'Error',
+                \ 'combine': 1,
+                \ 'priority': 10,
+                \ 'display': 'right_align'
+                \ })
+    call prop_type_add('vim_lsp_virtual_text_warning', {
+                \ 'highlight': 'WarningMsg',
+                \ 'combine': 1,
+                \ 'priority': 10,
+                \ 'display': 'right_align'
+                \ })
+    call prop_type_add('vim_lsp_virtual_text_info', {
+                \ 'highlight': 'Todo',
+                \ 'combine': 1,
+                \ 'priority': 10,
+                \ 'display': 'right_align'
+                \ })
+    let g:vim_lsp_virtual_text_type_defined = 1
+endif
+
+function! ShowDiagnostic(bufnr, diag) abort
 
 
-    endfunction
-
-
-    if !exists('g:vim_lsp_virtual_text_type_defined')
-        call prop_type_add('vim_lsp_virtual_text_error', {
-                    \ 'highlight': 'Error',
-                    \ 'combine': 1,
-                    \ 'priority': 10,
-                    \ 'display': 'right_align'
-                    \ })
-        call prop_type_add('vim_lsp_virtual_text_warning', {
-                    \ 'highlight': 'WarningMsg',
-                    \ 'combine': 1,
-                    \ 'priority': 10,
-                    \ 'display': 'right_align'
-                    \ })
-        call prop_type_add('vim_lsp_virtual_text_info', {
-                    \ 'highlight': 'Todo',
-                    \ 'combine': 1,
-                    \ 'priority': 10,
-                    \ 'display': 'right_align'
-                    \ })
-        let g:vim_lsp_virtual_text_type_defined = 1
+    if type(a:diag) != type({})
+        echoerr "ShowDiagnostic expects a dictionary"
+        return
     endif
 
-    function! ShowDiagnostic(bufnr, diag) abort
+    let l:buf       = a:bufnr
+    let l:end_line  = a:diag.range.end.line + 1
+    let l:msg       = a:diag.message
+    let l:sev       = a:diag.severity
 
 
-        if type(a:diag) != type({})
-            echoerr "ShowDiagnostic expects a dictionary"
+    let l:diag_props = s:get_diagnostic_props_from_severity(l:sev)
+    let l:sign_text = l:diag_props.sign_text
+    let l:hl_group  = l:diag_props.hl_group 
+    let l:sign_name = l:diag_props.sign_name
+    let l:prop_type = l:diag_props.prop_type
+
+    if !exists('g:lsp_diag_signs_defined')
+        execute 'sign define LspDiagError   text=E texthl=Error'
+        execute 'sign define LspDiagWarning text=W texthl=WarningMsg'
+        execute 'sign define LspDiagInfo    text=I texthl=Todo'
+        let g:lsp_diag_signs_defined = 1
+    endif
+
+
+    let l:cache_sign_key = s:generate_sign_cache_key(a:diag)
+
+    if !has_key(getbufvar(l:buf, "diag_cache_sign"), l:cache_sign_key)
+        execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
+        call BufVarDictSet(l:buf, "diag_cache_sign", l:cache_sign_key, l:end_line)
+    endif
+
+    if !exists('g:lsp_diag_virtual_text_align')
+        let g:lsp_diag_virtual_text_align = 'after'
+    endif
+    if !exists('g:lsp_diag_virtual_text_padding_left')
+        let g:lsp_diag_virtual_text_padding_left = 2
+    endif
+    if !exists('g:lsp_diag_virtual_text_wrap')
+        let g:lsp_diag_virtual_text_wrap = 'wrap'
+    endif
+
+
+    let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(a:diag)
+    if !has_key(getbufvar(l:buf, "diag_cache_virtual_text"), l:cache_virtual_text_key)
+
+        if bufloaded(l:buf)
+            let l:prop_id = prop_add(
+                        \ l:end_line, 0,
+                        \ {
+                        \   'type': l:prop_type,
+                        \   'text': l:sign_text . " " . l:msg,
+                        \   'bufnr': l:buf,
+                        \   'text_align': g:lsp_diag_virtual_text_align,
+                        \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
+                        \   'text_wrap': g:lsp_diag_virtual_text_wrap
+                        \ })
+            call BufVarDictSet(l:buf, "diag_cache_virtual_text", l:cache_virtual_text_key, l:prop_id)
+        endif
+    endif
+endfunction
+
+function! s:on_lsp_msg(channel, msg) abort
+    if type(a:msg) != 4 
+        return
+    endif
+    call s:handle_msg(a:channel, a:msg)
+endfunction
+
+function s:render_cached_diagnostics()
+    let l:found_missing = 0
+    let l:current_bufnr = bufnr('%')
+
+    if BufVarExists(l:current_bufnr, "diag_cache_virtual_text")
+
+        let l:result_errors = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_warning"}) 
+        let l:result_warnings = prop_find({"bufnr": l:current_bufnr, "type":  "vim_lsp_virtual_text_warning"}) 
+        let l:result_info = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_info"}) 
+        if !empty(l:result_errors) || !empty(l:result_warnings) || !empty(l:result_info) 
             return
         endif
+    endif
 
-        let l:buf       = a:bufnr
-        let l:end_line  = a:diag.range.end.line + 1
-        let l:msg       = a:diag.message
-        let l:sev       = a:diag.severity
-
-
-        let l:diag_props = s:get_diagnostic_props_from_severity(l:sev)
-        let l:sign_text = l:diag_props.sign_text
-        let l:hl_group  = l:diag_props.hl_group 
-        let l:sign_name = l:diag_props.sign_name
-        let l:prop_type = l:diag_props.prop_type
-
-        if !exists('g:lsp_diag_signs_defined')
-            execute 'sign define LspDiagError   text=E texthl=Error'
-            execute 'sign define LspDiagWarning text=W texthl=WarningMsg'
-            execute 'sign define LspDiagInfo    text=I texthl=Todo'
-            let g:lsp_diag_signs_defined = 1
-        endif
+    if !BufVarExists(l:current_bufnr, 'diagnostics_cache')
+        return
+    endif
+    call ClearAllDiagnostics(l:current_bufnr)
+    call s:delete_diag_prop_cache(l:current_bufnr)
+    for d in getbufvar(l:current_bufnr, "diagnostics_cache")
+        call ShowDiagnostic(l:current_bufnr, d)
+    endfor
 
 
-        let l:cache_sign_key = s:generate_sign_cache_key(a:diag)
+endfunction
 
-        if !has_key(getbufvar(l:buf, "diag_cache_sign"), l:cache_sign_key)
-            execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
-            call BufVarDictSet(l:buf, "diag_cache_sign", l:cache_sign_key, l:end_line)
-        endif
+function! s:handle_msg(channel, msg) abort
+    if has_key(a:msg, 'method') && a:msg.method ==# 'textDocument/publishDiagnostics'
 
-        if !exists('g:lsp_diag_virtual_text_align')
-            let g:lsp_diag_virtual_text_align = 'after'
-        endif
-        if !exists('g:lsp_diag_virtual_text_padding_left')
-            let g:lsp_diag_virtual_text_padding_left = 2
-        endif
-        if !exists('g:lsp_diag_virtual_text_wrap')
-            let g:lsp_diag_virtual_text_wrap = 'wrap'
-        endif
+        let l:filename = substitute(a:msg.params.uri, '^'. TernaryIfLinux('file://', 'file:///'), '', '')
+        let l:bufnr = bufnr(l:filename)
 
-
-        let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(a:diag)
-        if !has_key(getbufvar(l:buf, "diag_cache_virtual_text"), l:cache_virtual_text_key)
-
-            if bufloaded(l:buf)
-                let l:prop_id = prop_add(
-                            \ l:end_line, 0,
-                            \ {
-                            \   'type': l:prop_type,
-                            \   'text': l:sign_text . " " . l:msg,
-                            \   'bufnr': l:buf,
-                            \   'text_align': g:lsp_diag_virtual_text_align,
-                            \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
-                            \   'text_wrap': g:lsp_diag_virtual_text_wrap
-                            \ })
-                call BufVarDictSet(l:buf, "diag_cache_virtual_text", l:cache_virtual_text_key, l:prop_id)
-            endif
-        endif
-    endfunction
-
-    function! s:on_lsp_msg(channel, msg) abort
-        if type(a:msg) != 4 
+        if l:bufnr == -1
             return
         endif
-        call s:handle_msg(a:channel, a:msg)
-    endfunction
+        let l:diagnostics = a:msg.params.diagnostics
 
-    function s:render_cached_diagnostics()
-        let l:found_missing = 0
-        let l:current_bufnr = bufnr('%')
+        call setbufvar(l:bufnr, "diagnostics_cache", l:diagnostics)
+        call ClearExpiredDiagnostics(l:bufnr, l:diagnostics)
 
-        if BufVarExists(l:current_bufnr, "diag_cache_virtual_text")
-
-            let l:result_errors = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_warning"}) 
-            let l:result_warnings = prop_find({"bufnr": l:current_bufnr, "type":  "vim_lsp_virtual_text_warning"}) 
-            let l:result_info = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_info"}) 
-            if !empty(l:result_errors) || !empty(l:result_warnings) || !empty(l:result_info) 
-                return
-            endif
-        endif
-
-        if !BufVarExists(l:current_bufnr, 'diagnostics_cache')
-            return
-        endif
-        call ClearAllDiagnostics(l:current_bufnr)
-        call s:delete_diag_prop_cache(l:current_bufnr)
-        for d in getbufvar(l:current_bufnr, "diagnostics_cache")
-            call ShowDiagnostic(l:current_bufnr, d)
+        for d in l:diagnostics
+            call ShowDiagnostic(l:bufnr, d)
         endfor
+    endif
+endfunction
+
+function! s:on_lsp_exit(channel, ...) abort
+    echom 'clangd exited'
+    if a:0 > 0
+        echom 'msg: ' . string(a:1)
+    endif
+endfunction
+
+function! s:lsp_handle_references(channel, msg) abort
+    if has_key(a:msg, 'result') && !empty(a:msg.result)
+        new
+        setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
+        call setline(1, ['References:'])
+        for ref in a:msg.result
+            let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
+            let l:line = ref.range.start.line + 1
+            let l:col  = ref.range.start.character + 1
+            call append('$', l:file . ':' . l:line . ':' . l:col)
+        endfor
+        normal! gg
+    else
+        echom "No references found"
+    endif
+endfunction
 
 
-    endfunction
+function! LSPGoToDefintion() abort
+    let l:msg = {
+                \ 'jsonrpc': '2.0',
+                \ 'id': 2,
+                \ 'method': 'textDocument/definition',
+                \ 'params': {
+                \   'textDocument': {'uri': s:lsp_text_document_uri()},
+                \   'position': s:lsp_position()
+                \ }
+                \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_definition')})
+endfunction
 
-    function! s:handle_msg(channel, msg) abort
-        if has_key(a:msg, 'method') && a:msg.method ==# 'textDocument/publishDiagnostics'
+function! LSPReferences() abort
+    let l:msg = {
+                \ 'jsonrpc': '2.0',
+                \ 'id': 3,
+                \ 'method': 'textDocument/references',
+                \ 'params': {
+                \   'textDocument': {'uri': s:lsp_text_document_uri()},
+                \   'position': s:lsp_position(),
+                \   'context': {'includeDeclaration': v:true}
+                \ }
+                \ }
+    echom l:msg
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_references')})
+endfunction
 
-            let l:filename = substitute(a:msg.params.uri, '^'. TernaryIfLinux('file://', 'file:///'), '', '')
-            let l:bufnr = bufnr(l:filename)
+function! s:lsp_token_type_to_hl(type, mods) abort
+    "0 namespace
+    "1 type
+    "2 class
+    "3 enum
+    "4 interface
+    "5 struct
+    "6 typeParameter
+    "7 parameter
+    "8 variable
+    "9 property
+    "10 enumMember
+    "11 event
+    "12 function
+    "13 method
+    "14 macro
+    "15 keyword
+    "16 modifier
+    "17 comment
+    "18 string
+    "19 number
+    "20 regexp
+    "21 operator
 
-            if l:bufnr == -1
-                return
-            endif
-            let l:diagnostics = a:msg.params.diagnostics
+    let l:map = {
+        \ 0:  'Identifier',   
+        \ 1:  'Type',         
+        \ 2:  'Type',         
+        \ 3:  'Type',         
+        \ 4:  'Type',         
+        \ 5:  'Type',         
+        \ 6:  'Type',         
+        \ 7:  'Identifier',   
+        \ 8:  'Identifier',   
+        \ 9:  'Identifier',   
+        \ 10: 'Identifier',   
+        \ 11: 'Identifier',   
+        \ 12: 'Function',     
+        \ 13: 'Function',     
+        \ 14: 'Macro',        
+        \ 15: 'Keyword',      
+        \ 16: 'Keyword',      
+        \ 17: 'Comment',      
+        \ 18: 'String',       
+        \ 19: 'Number',       
+        \ 20: 'String',       
+        \ 21: 'Operator',     
+        \ }
 
-            call setbufvar(l:bufnr, "diagnostics_cache", l:diagnostics)
-            call ClearExpiredDiagnostics(l:bufnr, l:diagnostics)
+    return get(l:map, a:type, 'Identifier')
+endfunction
 
-            for d in l:diagnostics
-                call ShowDiagnostic(l:bufnr, d)
-            endfor
-        endif
-    endfunction
+function! s:lsp_handle_semantic_tokens(channel, msg) abort
+    if !has_key(a:msg, 'result') || !has_key(a:msg.result, 'data')
+        echom "No semantic tokens"
+        return
+    endif
 
-    function! s:on_lsp_exit(channel, ...) abort
-        echom 'clangd exited'
-        if a:0 > 0
-            echom 'msg: ' . string(a:1)
-        endif
-    endfunction
+    let l:data = a:msg.result.data
+    let l:line = 0
+    let l:char = 0
 
-    function! s:lsp_handle_references(channel, msg) abort
-        if has_key(a:msg, 'result') && !empty(a:msg.result)
-            new
-            setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
-            call setline(1, ['References:'])
-            for ref in a:msg.result
-                let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
-                let l:line = ref.range.start.line + 1
-                let l:col  = ref.range.start.character + 1
-                call append('$', l:file . ':' . l:line . ':' . l:col)
-            endfor
-            normal! gg
+    for i in range(0, len(l:data)-1, 5)
+        let l:deltaLine = l:data[i]
+        let l:deltaStart = l:data[i+1]
+        let l:length = l:data[i+2]
+        let l:tokenType = l:data[i+3]
+        let l:tokenMods = l:data[i+4]
+
+        let l:line += l:deltaLine
+        if l:deltaLine == 0
+            let l:char += l:deltaStart
         else
-            echom "No references found"
+            let l:char = l:deltaStart
         endif
-    endfunction
+
+        let l:hlgroup = s:lsp_token_type_to_hl(l:tokenType, l:tokenMods)
+        call matchaddpos(l:hlgroup, [[l:line+1, l:char+1, l:length]])
+    endfor
+endfunction
+function! LSPRequestSemanticTokens() abort
+    let l:msg = {
+                \ 'jsonrpc': '2.0',
+                \ 'id': 42,
+                \ 'method': 'textDocument/semanticTokens/full',
+                \ 'params': {
+                \   'textDocument': {'uri': s:lsp_text_document_uri()}
+                \ }
+                \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_semantic_tokens')})
+endfunction
+
+let s:opts = {
+            \ 'in_mode': 'lsp',
+            \ 'out_mode': 'lsp',
+            \ 'err_mode': 'nl',
+            \ 'out_cb': function('s:on_lsp_msg'),
+            \ 'err_cb': function('s:on_lsp_msg'),
+            \ 'close_cb': function('s:on_lsp_exit')
+            \ }
+
+function! s:lsp_did_open() abort
+
+    if !exists('g:lsp_job')
+        echom "No g:lsp_job"
+        return
+    endif
+
+    let l:doc_uri = s:lsp_text_document_uri()
+    if l:doc_uri ==# ''
+        echom "uri empty"
+        return
+    endif
+    let lsp_msg = {
+                \ 'jsonrpc': '2.0',
+                \ 'method': 'textDocument/didOpen',
+                \ 'params': {
+                \     'textDocument': {
+                \         'uri': l:doc_uri,
+                \         'languageId': 'cpp',
+                \         'version': 1,
+                \         'text': join(getbufline('%', 1, '$'), "\n")
+                \     }
+                \ }
+                \ }
+    call ch_sendexpr(g:lsp_job, lsp_msg)
+    let b:lsp_opened = 1
+endfunction
+
+function! s:lsp_did_change() abort
+    if !exists('g:lsp_job')
+        echom "No g:lsp_job"
+        return
+    endif
+    if !exists('s:lsp_version') 
+        let s:lsp_version = 1 
+    else 
+        let s:lsp_version += 1 
+    endif
 
 
-    function! LSPGoToDefintion() abort
-        let l:msg = {
-                    \ 'jsonrpc': '2.0',
-                    \ 'id': 2,
-                    \ 'method': 'textDocument/definition',
-                    \ 'params': {
-                    \   'textDocument': {'uri': s:lsp_text_document_uri()},
-                    \   'position': s:lsp_position()
-                    \ }
-                    \ }
-        call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_definition')})
-    endfunction
+    let l:doc_uri = s:lsp_text_document_uri()
+    if l:doc_uri ==# ''
+        echom "uri empty"
+        return
+    endif
+    let lsp_msg = {
+                \ 'jsonrpc': '2.0',
+                \ 'method': 'textDocument/didChange',
+                \ 'params': {
+                \     'textDocument': {
+                \         'uri': l:doc_uri,
+                \         'version': s:lsp_version
+                \     },
+                \     'contentChanges': [
+                \         {'text': join(getbufline('%', 1, '$'), "\n")}
+                \     ]
+                \ }
+                \ }
+    call ch_sendexpr(g:lsp_job, lsp_msg)
+endfunction
 
-    function! LSPReferences() abort
-        let l:msg = {
-                    \ 'jsonrpc': '2.0',
-                    \ 'id': 3,
-                    \ 'method': 'textDocument/references',
-                    \ 'params': {
-                    \   'textDocument': {'uri': s:lsp_text_document_uri()},
-                    \   'position': s:lsp_position(),
-                    \   'context': {'includeDeclaration': v:true}
-                    \ }
-                    \ }
-        echom l:msg
-        call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_references')})
-    endfunction
+function! s:lsp_did_close() abort
+    if !exists('b:lsp_opened') || !b:lsp_opened
+        return
+    endif
 
-    let s:opts = {
-                \ 'in_mode': 'lsp',
-                \ 'out_mode': 'lsp',
-                \ 'err_mode': 'nl',
-                \ 'out_cb': function('s:on_lsp_msg'),
-                \ 'err_cb': function('s:on_lsp_msg'),
-                \ 'close_cb': function('s:on_lsp_exit')
+    let lsp_msg = {
+                \ 'jsonrpc': '2.0',
+                \ 'method': 'textDocument/didClose',
+                \ 'params': {
+                \     'textDocument': { 'uri': s:lsp_text_document_uri() }
+                \ }
                 \ }
 
-    function! s:lsp_did_open() abort
+    call ch_sendexpr(g:lsp_job, lsp_msg)
 
-        if !exists('g:lsp_job')
-            echom "No g:lsp_job"
-            return
-        endif
-
-        let l:doc_uri = s:lsp_text_document_uri()
-        if l:doc_uri ==# ''
-            echom "uri empty"
-            return
-        endif
-        let lsp_msg = {
-                    \ 'jsonrpc': '2.0',
-                    \ 'method': 'textDocument/didOpen',
-                    \ 'params': {
-                    \     'textDocument': {
-                    \         'uri': l:doc_uri,
-                    \         'languageId': 'cpp',
-                    \         'version': 1,
-                    \         'text': join(getbufline('%', 1, '$'), "\n")
-                    \     }
-                    \ }
-                    \ }
-        call ch_sendexpr(g:lsp_job, lsp_msg)
-        let b:lsp_opened = 1
-    endfunction
-
-    function! s:lsp_did_change() abort
-        if !exists('g:lsp_job')
-            echom "No g:lsp_job"
-            return
-        endif
-        if !exists('s:lsp_version') 
-            let s:lsp_version = 1 
-        else 
-            let s:lsp_version += 1 
-        endif
+    unlet b:lsp_opened
+endfunction
 
 
-        let l:doc_uri = s:lsp_text_document_uri()
-        if l:doc_uri ==# ''
-            echom "uri empty"
-            return
-        endif
-        let lsp_msg = {
-                    \ 'jsonrpc': '2.0',
-                    \ 'method': 'textDocument/didChange',
-                    \ 'params': {
-                    \     'textDocument': {
-                    \         'uri': l:doc_uri,
-                    \         'version': s:lsp_version
-                    \     },
-                    \     'contentChanges': [
-                    \         {'text': join(getbufline('%', 1, '$'), "\n")}
-                    \     ]
-                    \ }
-                    \ }
-        call ch_sendexpr(g:lsp_job, lsp_msg)
-    endfunction
+if executable('clangd')
+    let g:lsp_job = job_start(['clangd', '--compile-commands-dir=build'], s:opts)
+    call ch_sendexpr(g:lsp_job, {
+                \ 'jsonrpc': '2.0',
+                \ 'id': 1,
+                \ 'method': 'initialize',
+                \ 'params': {
+                \     'capabilities': {
+                \       "textDocument": {
+                \           "documentSymbol": {
+                \               "hierarchicalDocumentSymbolSupport": v:true
+                \           },
+                \        "semanticTokens": {
+                \            "dynamicRegistration": v:false,
+                \            "tokenTypes": [
+                \                'namespace','type','class','enum','interface','struct',
+                \                'function','method','property','variable','parameter',
+                \                'keyword','comment','string','number','operator'
+                \            ],
+                \            "tokenModifiers": [
+                \                'declaration','readonly','static','deprecated','abstract',
+                \                'async','modification','documentation','defaultLibrary'
+                \            ],
+                \            "requests": {
+                \                "full": v:true,
+                \                "range": v:false
+                \            }
+                \        }
+                \       }
+                \       },
+                \     'rootUri': 'file://' . getcwd()
+                \ }
+                \ })
 
-    function! s:lsp_did_close() abort
-        if !exists('b:lsp_opened') || !b:lsp_opened
-            return
-        endif
+    " autocmd BufWipeout * call s:lsp_did_close()
 
-        let lsp_msg = {
-                    \ 'jsonrpc': '2.0',
-                    \ 'method': 'textDocument/didClose',
-                    \ 'params': {
-                    \     'textDocument': { 'uri': s:lsp_text_document_uri() }
-                    \ }
-                    \ }
+    augroup MyLSP
+        autocmd!
+        for pat in g:lsp_file_patterns
+            execute 'autocmd BufReadPost,BufNewFile ' . pat . ' call s:lsp_did_open()'
+            execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:lsp_did_change()'
+            execute 'autocmd BufEnter ' . pat . ' call s:render_cached_diagnostics()'
+            execute 'autocmd BufEnter,CursorMoved,WinEnter,VimResized,TextChanged,TextChangedI '  . pat .  ' call UpdateStatuslineWithScope()'
+            execute 'autocmd BufReadPost ' . pat . ' call LSPRequestSemanticTokens()'
+        endfor
+    augroup END
 
-        call ch_sendexpr(g:lsp_job, lsp_msg)
-
-        unlet b:lsp_opened
-    endfunction
-
-
-    if executable('clangd')
-        let g:lsp_job = job_start(['clangd', '--compile-commands-dir=build'], s:opts)
-        call ch_sendexpr(g:lsp_job, {
-                    \ 'jsonrpc': '2.0',
-                    \ 'id': 1,
-                    \ 'method': 'initialize',
-                    \ 'params': {
-                    \     'capabilities': {
-                    \       "textDocument": {
-                    \           "documentSymbol": {
-                    \               "hierarchicalDocumentSymbolSupport": v:true
-                    \           }
-                    \       }
-                    \       },
-                    \     'rootUri': 'file://' . getcwd()
-                    \ }
-                    \ })
-
-        " autocmd BufWipeout * call s:lsp_did_close()
-
-        augroup MyLSP
-            autocmd!
-            for pat in g:lsp_file_patterns
-                execute 'autocmd BufReadPost,BufNewFile ' . pat . ' call s:lsp_did_open()'
-                execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:lsp_did_change()'
-                execute 'autocmd BufEnter ' . pat . ' call s:render_cached_diagnostics()'
-                execute 'autocmd BufEnter,CursorMoved,WinEnter,VimResized,TextChanged,TextChangedI '  . pat .  ' call UpdateStatuslineWithScope()'
-            endfor
-        augroup END
-
-        nnoremap gd :call LSPGoToDefintion()<CR>
-        nnoremap gr :call LSPReferences()<CR>
-        nnoremap K :call LSPHover()<CR>
-        nnoremap <leader>ds :call LSPDocumentSymbols()<CR>
-        nnoremap <leader>pg :call ShowPartialProjectGraph()<CR>
-        nnoremap <leader>sc :call UpdateStatuslineWithScope()<CR>
-    endif
+    nnoremap gd :call LSPGoToDefintion()<CR>
+    nnoremap gr :call LSPReferences()<CR>
+    nnoremap K :call LSPHover()<CR>
+    nnoremap <leader>ds :call LSPDocumentSymbols()<CR>
+    nnoremap <leader>pg :call ShowPartialProjectGraph()<CR>
+    nnoremap <leader>sc :call UpdateStatuslineWithScope()<CR>
+endif
 
