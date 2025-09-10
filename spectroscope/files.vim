@@ -2,7 +2,6 @@ let s:config_path = split(&runtimepath, ',')[0]
 
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 execute 'source' s:config_path . './spectroscope/bind_groups.vim'
-execute 'source' s:config_path . './spectroscope/continuous_search.vim'
 execute 'source' s:config_path . './spectroscope/cached.vim'
 
 
@@ -29,31 +28,6 @@ function! FilterList(bufnr, pattern)
     call setbufline(a:bufnr, 1, l:filtered)
     call deletebufline(a:bufnr, len(l:filtered) + 1, '$')
     call setbufvar(a:bufnr, '&modifiable', 0)
-endfunction
-
-function! OpenSpecialListBufferWithSearch(list, action_map, filetype)
-    let s:current_list = a:list
-    let s:action_map = a:action_map
-    let s:filetype = a:filetype
-
-    vert enew
-    let l:new_buf = bufnr('%')
-
-    call setbufvar(l:new_buf, '&buftype', 'nofile')
-    call setbufvar(l:new_buf, '&bufhidden', 'wipe')
-    call setbufvar(l:new_buf, '&swapfile', 0)
-    call setbufvar(l:new_buf, '&modifiable', 1)
-    call setbufvar(l:new_buf, '&filetype', a:filetype)
-    call setbufvar(l:new_buf, '&buflisted', 0)
-
-    call setbufline(l:new_buf, 1, a:list)
-    call setbufvar(l:new_buf, '&modifiable', 0)
-
-    for [key, func] in items(a:action_map)
-      execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))<CR>'
-    endfor
-    call ContinuousInputPopup(l:new_buf, function('FilterList'))
-    
 endfunction
 
 function! FindFiles()
