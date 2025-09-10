@@ -38,7 +38,20 @@ function! FindFilesWithFilter()
     endif
 
     if !empty(l:files)
-        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'filelist', 0)
+        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'filelist', 0, 0)
+    else
+        echo "No files found in current directory."
+    endif
+endfunction
+
+function! LastFileWithFilter()
+    let l:files = g:files_cached
+    if empty(l:files)
+        let l:files = FindFilesInCWDSystemBased(g:files_blacklist)
+    endif
+
+    if !empty(l:files)
+        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'filelist', 0, 1)
     else
         echo "No files found in current directory."
     endif

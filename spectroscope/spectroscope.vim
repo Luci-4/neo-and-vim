@@ -47,7 +47,9 @@ function! s:update_input(input, char)
 endfunction
 
 
-function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical, ...)
+let g:last_opened_picker = {}
+
+function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical, reopen, ...)
     let l:prev_buf = bufnr('%')
     let l:prev_win = winnr()
     let l:wrap = (a:0 >= 1 ? a:1 : 0)  " default = 0 (nowrap)
@@ -76,8 +78,18 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical,
     "     execute 'nunmap <buffer> ' . key
     "     execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))'
     " endfor
-    let input = ''
     let match_id = -1
+    let input = ''
+    if a:reopen == 1
+        let input = get(get(g:last_opened_picker, a:filetype, {}), "input", '')
+
+        let filtered_list = filter(copy(a:list), 'v:val =~# input')
+        call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
+        call setbufvar(l:new_buf, '&modifiable', 1)
+        call deletebufline(l:new_buf, 1, '$')
+        call setbufline(l:new_buf, 1, filtered_list)
+        call setbufvar(l:new_buf, '&modifiable', 0)
+    endif
     echo input
     redraw
     let collected_mapping = ''
@@ -139,6 +151,13 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical,
         redraw
         echo input
     endwhile
+
+    if !empty(input)
+        let g:last_opened_picker[a:filetype] = {}
+        let g:last_opened_picker[a:filetype]['input'] = input
+        let g:last_opened_picker[a:filetype]['list'] = filtered_list
+    endif
+
     if entering == 1
         while 1
             echo "Direction:"
