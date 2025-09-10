@@ -607,8 +607,7 @@ function! ShowDiagnostic(bufnr, diag) abort
 endfunction
 
 function! s:on_lsp_msg(channel, msg) abort
-    if type(a:msg) != 4 " skip non-dict messages
-        " echom "skipping (non-dict)"
+    if type(a:msg) != 4 
         return
     endif
     call s:handle_msg(a:channel, a:msg)

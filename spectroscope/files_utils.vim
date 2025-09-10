@@ -1,21 +1,18 @@
 function! OpenFile(file)
-  if filereadable(a:file)
-
-    echom "before opening file: " . bufnr('#') . " name: " . bufname(bufnr('#'))
-    execute 'keepalt edit ' . fnameescape(a:file)
-    echom "after opening file: " . bufnr('#') . " name: " . bufname(bufnr('#'))
-  else
-    echo "File does not exist: " . a:file
-  endif
+    if filereadable(a:file)
+        execute 'keepalt edit ' . fnameescape(a:file)
+    else
+        echo "File does not exist: " . a:file
+    endif
 endfunction
 
-function! s:OpenFileVSplitRight(file)
-  if filereadable(a:file)
-    " Open file in a vertical split on the right (default)
-    execute 'vsplit ' . fnameescape(a:file)
-  else
-    echo "File does not exist: " . a:file
-  endif
+function! OpenFileVSplitRight(file)
+    if filereadable(a:file)
+        " Open file in a vertical split on the right (default)
+        execute 'vsplit ' . fnameescape(a:file)
+    else
+        echo "File does not exist: " . a:file
+    endif
 endfunction
 
 function s:open_file_in_direction(file, direction)
@@ -42,3 +39,4 @@ endfunction
 function! OpenFileInWindowInDirectionL(file)
     call s:open_file_in_direction(a:file, 'l')
 endfunction
+

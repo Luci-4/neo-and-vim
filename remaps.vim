@@ -1,34 +1,33 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/spectroscope/files.vim'
-execute 'source' s:config_path . '/spectroscope/filter_files.vim'
 execute 'source' s:config_path . '/spectroscope/git.vim'
 execute 'source' s:config_path . '/spectroscope/messages.vim'
-execute 'source' s:config_path . '/spectroscope/vimgrep.vim'
 
 let mapleader = "\<Space>"
 
-nnoremap <Leader>fr :call ListRecentFilesInBuffer()<CR>
-nnoremap <Leader>gb :call ListBranches()<CR>
+" nnoremap <Leader>fr :call ListRecentFilesInBuffer()<CR>
+" nnoremap <Leader>gb :call ListBranches()<CR>
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
-nnoremap <Leader>ff :call ListFilesInBufferWithSearch()<CR>
-nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
+nnoremap <Leader>ff :call FindFiles()<CR>
+nnoremap <Leader>fs :call FindFilesWithFilter()<CR>
+" nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
 
 nnoremap <leader><leader> <c-^>
 
 function! IncreaseSize()
-  resize +10
+    resize +10
 endfunction
 
 function! DecreaseSize()
-  resize -10
+    resize -10
 endfunction
 
 function! IncreaseWidth()
-  execute "wincmd >"
+    execute "10 wincmd >"
 endfunction
 
 function! DecreaseWidth()
-  execute "wincmd <"
+    execute "10 wincmd <"
 endfunction
 
 nnoremap <Esc>h <C-w>h

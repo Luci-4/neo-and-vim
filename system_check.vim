@@ -2,6 +2,10 @@ function! IsOnLinux()
     return has('unix') && executable('uname') && system('uname -s') =~? '^linux'
 endfunction
 
+function! IsOnWindows() 
+    return has('win32') || has('win64')
+endfunction
+
 function! TernaryIfLinux(linux_version, other_version)
     if IsOnLinux()
         return a:linux_version

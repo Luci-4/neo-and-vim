@@ -59,32 +59,32 @@ highlight StatusLine ctermfg=White ctermbg=DarkBlue guifg=#ffffff guibg=#005f87
 highlight StatusLineNC ctermfg=Grey ctermbg=DarkGrey
 
 function! TitleString()
-  let cwd = fnamemodify(getcwd(), ':t') 
+    let cwd = fnamemodify(getcwd(), ':t') 
 
-  " let repo = ''
-  " let branch = ''
+    " let repo = ''
+    " let branch = ''
 
-  " if !empty(finddir('.git', '.;'))
-  "   let toplevel = systemlist('git rev-parse --show-toplevel')[0]
-  "   let repo = fnamemodify(toplevel, ':t')
+    " if !empty(finddir('.git', '.;'))
+    "   let toplevel = systemlist('git rev-parse --show-toplevel')[0]
+    "   let repo = fnamemodify(toplevel, ':t')
 
-  "   
-  "   let branchcmd = TernaryIfLinux('git rev-parse --abbrev-ref HEAD 2>/dev/null', 'git rev-parse --is-inside-work-tree')
-  "   let branchlist = systemlist(branchcmd)
-  "   if !empty(branchlist)
-  "     let branch = branchlist[0]
-  "   endif
-  " endif
-  
-  let parts = ['/' . cwd]
-  " if repo !=# ''
-  "   call add(parts, repo)
-  "   if branch !=# ''
-  "     call add(parts, ' ' . branch)
-  "   endif
-  " endif
+    "   
+    "   let branchcmd = TernaryIfLinux('git rev-parse --abbrev-ref HEAD 2>/dev/null', 'git rev-parse --is-inside-work-tree')
+    "   let branchlist = systemlist(branchcmd)
+    "   if !empty(branchlist)
+    "     let branch = branchlist[0]
+    "   endif
+    " endif
 
-  return join(parts, ' • ')  
+    let parts = ['/' . cwd]
+    " if repo !=# ''
+    "   call add(parts, repo)
+    "   if branch !=# ''
+    "     call add(parts, ' ' . branch)
+    "   endif
+    " endif
+
+    return join(parts, ' • ')  
 endfunction
 
 set title
@@ -94,9 +94,9 @@ set shortmess+=I
 
 
 augroup RecentFilesListOnStart
-  autocmd!
-  autocmd VimEnter * call InitRecentFiles()
-  autocmd VimEnter * if argc() == 0 | call ListRecentFilesInBuffer() | endif
+    autocmd!
+    autocmd VimEnter * call InitRecentFiles()
+    autocmd VimEnter * if argc() == 0 | call ListRecentFilesInBuffer() | endif
 augroup END
 
 autocmd FileType python setlocal tabstop=4 shiftwidth=4
@@ -107,3 +107,4 @@ function! SetStatusLine()
 endfunction
 
 autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
+set belloff=all
