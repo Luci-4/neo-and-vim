@@ -2,7 +2,27 @@ let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/files_utils.vim'
 
 
+let s:previous_needle = ''
+let s:previous_results = [] 
+
 function! GrepInCWDSystemBased(needle) abort
+    if len(a:needle) < 3
+        return []
+    endif
+    if !empty(s:previous_results)
+        if stridx(a:needle, s:previous_needle) == 0 && strlen(a:needle) > strlen(s:previous_needle)
+            let l:filtered = []
+            for l:line in s:previous_results
+                let l:parsed = s:parse_grep_line(l:line)
+                if !empty(l:parsed) && l:parsed.text =~ a:needle
+                    call add(l:filtered, l:line)
+                endif
+            endfor
+            let s:previous_needle = a:needle
+            let s:previous_results = l:filtered
+            return l:filtered
+        endif
+    endif
     let l:files = g:files_cached
     let l:use_black_list = 0
     if empty(l:files)
@@ -24,11 +44,8 @@ function! GrepInCWDSystemBased(needle) abort
             let l:cmd = "rg --vimgrep --column --hidden -- " . shellescape(a:needle) . ' ' . join(g:files_cached_shell_escaped, ' ')
         endif
         let l:results = split(system(l:cmd), "\n")
-        echom "used rg, collected " . len(l:results)
-        return l:results
-    endif
 
-    if IsOnLinux() && executable('grep')
+    elseif IsOnLinux() && executable('grep')
         if l:use_black_list
             let l:cmd = 'grep -RnH ' . g:blacklist_args_cached_for_tools['grep'] . ' ' . shellescape(l:needle) . ' ' . shellescape(l:root)
         else
@@ -37,24 +54,23 @@ function! GrepInCWDSystemBased(needle) abort
 
         let l:results = split(systemlist(l:cmd), '\n')
 
-        echom "used grep, collected " . len(l:results)
-        return l:results
+    else
+        call setqflist([])
+
+        let file_list = join(l:files, ' ')
+
+        let pattern = escape(a:needle, '/\.*$^~[]')
+        execute 'vimgrep /' . pattern . '/j ' . file_list
+
+        for item in getqflist()
+            " Construct the standard format string
+            let entry = printf('%s:%d:%d:%s', item.bufname, item.lnum, item.col, item.text)
+            call add(l:results, entry)
+        endfor
     endif
-    call setqflist([])
-
-    let file_list = join(l:files, ' ')
-
-    let pattern = escape(a:needle, '/\.*$^~[]')
-    execute 'vimgrep /' . pattern . '/j ' . file_list
-
-    for item in getqflist()
-        " Construct the standard format string
-        let entry = printf('%s:%d:%d:%s', item.bufname, item.lnum, item.col, item.text)
-        call add(results, entry)
-    endfor
-
-    echom "used vimgrep, collected " . len(l:results)
-    return results
+    let s:previous_needle = a:needle
+    let s:previous_results = l:results
+    return l:results
 endfunction
 
 
