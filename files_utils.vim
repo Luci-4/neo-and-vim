@@ -1,73 +1,31 @@
-function! OpenFileExternally(file)
-    let l:file = expand(a:file)
-    if empty(l:file)
-        echo "No file to open"
-        return
-    endif
 
-    if has('win32') || has('win64')
-        let l:cmd = 'start "" ' . shellescape(l:file)
-    elseif has('macunix')
-        let l:cmd = 'open ' . shellescape(l:file)
-    elseif has('unix')
-        let l:cmd = 'xdg-open ' . shellescape(l:file)
-    else
-        echo "Unsupported OS"
-        return
-    endif
-
-    call system(l:cmd)
-    echo "Opened " . l:file . " externally"
-endfunction
-
-
-function! s:ExcludeArgs(tool, blacklist)
-    let l:blacklist = a:blacklist
-    let l:args = ''
-    for item in l:blacklist
-        if a:tool ==# 'fd'
-            let l:args .= ' --exclude ' . shellescape(item)
-        elseif a:tool ==# 'rg'
-            let l:args .= ' --glob ' . shellescape('!' . item)
-        elseif a:tool ==# 'find'
-            let l:args .= ' ! -path ' . shellescape('*' . item . '*')
-        endif
-    endfor
-    return l:args
-endfunction
-
-function! FindFilesInCWDSystemBased(blacklist)
+function! FindFilesInCWDSystemBased()
     let l:root = getcwd()
-    let l:blacklist = a:blacklist
     let l:files = []
 
+    if executable('fd')
+        let l:cmd = 'fd . --type f --hidden --follow' . g:blacklist_args_cached_for_tools['fd'] . ' --base-directory ' . shellescape(l:root)
+        let l:files = split(system(l:cmd), "\n")
+        echom "running fd: " . l:cmd
+        return l:files
 
     if IsOnLinux()
-        if executable('fd')
-            let l:exclude = s:ExcludeArgs('fd', l:blacklist)
-            let l:files = split(system('fd . --type f --hidden --follow' . l:exclude . '--base-directory ' . shellescape(l:root)), "\n")
-            return l:files
         elseif executable('rg')
-            let l:exclude = s:ExcludeArgs('rg', l:blacklist)
-            let l:files = split(system('rg --files --hidden --follow ' . l:exclude . ' ' . shellescape(l:root)), "\n")
+            let l:files = split(system('rg --files --hidden --follow ' . g:blacklist_args_cached_for_tools['rg'] . ' ' . shellescape(l:root)), "\n")
             return l:files
         elseif executable('find')
-            let l:exclude = s:ExcludeArgs('find', l:blacklist)
-            let l:files = split(system('find ' . shellescape(l:root) . ' -type f' . l:exclude), "\n")
-            return l:files
-        endif
-    elseif IsOnWindows()
-        if executable('fd')
-            let l:exclude = s:ExcludeArgs('fd', l:blacklist)
-
-            let l:files = split(system('fd . --type f --hidden --follow' . l:exclude . ' --base-directory ' . shellescape(l:root)), "\n")
+            let l:files = split(system('find ' . shellescape(l:root) . ' -type f' . g:blacklist_args_cached_for_tools['find']), "\n")
             return l:files
         endif
     endif
-
     let l:files = globpath(l:root, '**/*', 0, 1) 
-    if !empty(l:blacklist)
-        let l:files = filter(copy(l:files), 'empty(filter(l:blacklist, "match(v:val, v:val1)"))')
+    if !empty(l:blacklist_directories)
+        for dir in g:blacklist_directories
+            let l:files = filter(l:files, 'v:val !~# "/" . dir . "/"')
+        endfor
     endif
+    for pattern in g:blacklist_files
+        let l:files = filter(l:files, 'v:val !~# pattern_to_regex(pattern)')
+    endfor
     return l:files
 endfunction

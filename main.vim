@@ -8,6 +8,7 @@ function! SetStatusLine()
 endfunction
 
 autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
+autocmd VimEnter * call SetupSpecialListBufferPicker()
 
 
 

@@ -1,6 +1,8 @@
 let s:config_path = split(&runtimepath, ',')[0]
+
 let s:log_file = s:config_path . "/log_char.txt"
 function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...)
+
     let l:wrap = (a:0 >= 1 ? a:1 : 0)  " default = 0 (nowrap)
     if a:vertical
         vertical enew
@@ -48,61 +50,39 @@ endfunction
 
 
 let g:last_opened_picker = {}
-
-function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical, reopen, ...)
-    let l:prev_buf = bufnr('%')
-    let l:prev_win = winnr()
-    let l:wrap = (a:0 >= 1 ? a:1 : 0)  " default = 0 (nowrap)
-    if a:vertical
-        vertical enew
-    else
-        enew
+function! SetupSpecialListBufferPicker()
+    if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
+        let l:buf = bufadd('')  " empty name = unnamed buffer
+        call setbufvar(l:buf, '&buftype', 'nofile')
+        call setbufvar(l:buf, '&bufhidden', 'hide')
+        call setbufvar(l:buf, '&swapfile', 0)
+        call setbufvar(l:buf, '&modifiable', 1)
+        call setbufvar(l:buf, '&filetype', 'speciallist')
+        call setbufvar(l:buf, '&buflisted', 0)
+        call setbufvar(l:buf, '&cursorline', 1)
+        highlight CursorLine ctermbg=LightGrey guibg=#555555 gui=NONE cterm=NONE
+        call setbufvar(l:buf, '&modifiable', 0)
+        let g:special_list_buf = l:buf
     endif
-    let l:new_buf = bufnr('%')
+endfunction
 
-    call setbufvar(l:new_buf, '&buftype', 'nofile')
-    call setbufvar(l:new_buf, '&bufhidden', 'wipe')
-    call setbufvar(l:new_buf, '&swapfile', 0)
-    call setbufvar(l:new_buf, '&modifiable', 1)
-    call setbufvar(l:new_buf, '&filetype', a:filetype)
-    call setbufvar(l:new_buf, '&buflisted', 0)
-    call setbufvar(l:new_buf, '&cursorline', 1)
-    highlight CursorLine ctermbg=LightGrey guibg=#555555
-    call setbufvar(l:new_buf, '&wrap', l:wrap)
-
-    call setbufline(l:new_buf, 1, a:list)
-    call setbufvar(l:new_buf, '&modifiable', 0)
-
-    " for [key, func] in items(a:action_map)
-    "     " execute 'silent! nunmap <buffer> ' . key
-    "     execute 'nunmap <buffer> ' . key
-    "     execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))'
-    " endfor
+function! RunPickerWhile(buf, input, list)
+    call clearmatches()
+    let l:new_buf = a:buf 
     let match_id = -1
-    let input = ''
-    if a:reopen == 1
-        let input = get(get(g:last_opened_picker, a:filetype, {}), "input", '')
-
-        let filtered_list = filter(copy(a:list), 'v:val =~# input')
-        call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
-        call setbufvar(l:new_buf, '&modifiable', 1)
-        call deletebufline(l:new_buf, 1, '$')
-        call setbufline(l:new_buf, 1, filtered_list)
-        call setbufvar(l:new_buf, '&modifiable', 0)
+    let input = a:input
+    if empty(input)
+        let input = getbufvar(l:new_buf, 'input')
     endif
     echo input
-    redraw
-    let collected_mapping = ''
+    let list = a:list
+    if empty(list)
+        let list  = getbufvar(l:new_buf, 'list')
+    endif
+
     let entering = 0
     while 1
-        
         let char = getchar()
-        " if type(char) == type(0) && char == 0 
-        "     continue
-        " endif
-        " call writefile([string(char) . "==" . nr2char(char) ], s:log_file, 'a')
-        " continue
-
         let l:is_empty = type(char) == type(0) && char == 0 
         if l:is_empty
             continue
@@ -124,15 +104,16 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical,
             break
         endif
         if char == char2nr("\<Esc>")
-            break  
+            let entering = 0
+            break
         endif
 
         let input = s:update_input(input, char)
 
-        if input ==# ''
-            let filtered_list = copy(a:list)
+        if empty(input)
+            let filtered_list = copy(list)
         else
-            let filtered_list = filter(copy(a:list), 'v:val =~# input')
+            let filtered_list = filter(copy(list), 'v:val =~# input')
             call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
         endif
 
@@ -151,47 +132,88 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical,
         redraw
         echo input
     endwhile
+    call setbufvar(l:new_buf, 'input', input)
 
+    let direction_binds = getbufvar(l:new_buf, 'direction_binds')
     if !empty(input)
-        let g:last_opened_picker[a:filetype] = {}
-        let g:last_opened_picker[a:filetype]['input'] = input
-        let g:last_opened_picker[a:filetype]['list'] = filtered_list
+        let filetype = getbufvar(l:new_buf, 'filetype')
+        let g:last_opened_picker[filetype] = {}
+        let g:last_opened_picker[filetype]['input'] = input
+        let g:last_opened_picker[filetype]['list'] = filtered_list
     endif
 
-    if entering == 1
-        while 1
-            echo "Direction:"
-            let direction = getchar()
-            if direction == char2nr("\<Esc>")
-                break
-            endif
-
-
-            let char_direction = nr2char(direction)
-
-            if direction == char2nr("\<CR>")
-                let char_direction = ''
-            endif
-
-            if has_key(a:direction_binds, char_direction)
-
-                execute 'call ' . a:direction_binds[char_direction] . '(getline("."))'
-                break
-            endif
-            echo "invalid: " . nr2char(direction)
-        endwhile
+    if entering != 1
+        return
     endif
-
-    let winlist = win_findbuf(l:new_buf)
-    for winnr in winlist
-        if winnr == l:prev_win
-            call win_execute(winnr, 'buffer ' . l:prev_buf)
-        else
-
+    while 1
+        echo "Direction:"
+        let direction = getchar()
+        if direction == char2nr("\<Esc>")
+            break
         endif
 
-    endfor
 
+        let char_direction = nr2char(direction)
+
+        if direction == char2nr("\<CR>")
+            let char_direction = ''
+        endif
+
+        if has_key(direction_binds, char_direction)
+
+            execute 'call ' . direction_binds[char_direction] . '(getline("."))'
+            break
+        endif
+        echo "invalid: " . nr2char(direction)
+    endwhile
+endfunction
+
+function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical, reopen, ...)
+    if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
+        call SetupSpecialListBufferPicker()
+    endif
+
+    let l:new_buf = g:special_list_buf
+    let l:win = bufwinnr(l:new_buf) 
+    let l:buffer_not_opened_in_window = bufwinnr(l:new_buf) == -1
+    if l:buffer_not_opened_in_window
+        call setbufvar(l:new_buf, "input", "")
+        if a:vertical
+            execute 'vertical sbuffer' l:new_buf
+        else
+            execute 'buffer' l:new_buf
+        endif
+        call setbufvar(l:new_buf, '&modifiable', 1)
+        call deletebufline(l:new_buf, 1, '$')
+        call setbufline(l:new_buf, 1, a:list)
+        call setbufvar(l:new_buf, '&wrap', (a:0 >= 1 ? a.wrap : 0))
+        call setbufvar(l:new_buf, '&cursorline', 1)
+        call setbufvar(l:new_buf, '&modifiable', 0)
+        call setbufvar(l:new_buf, 'list', a:list)
+        call setbufvar(l:new_buf, 'filetype', a:filetype)
+        call setbufvar(l:new_buf, 'direction_binds', a:direction_binds)
+    else
+        execute l:win . 'wincmd w'
+        " call RunPickerWhile(g:special_list_buf, "", [])
+    endif
+
+
+    let input = ''
+    if a:reopen == 1
+        let input = get(get(g:last_opened_picker, a:filetype, {}), "input", '')
+        if empty(input)
+            let filtered_list = copy(a:list)
+        else
+            let filtered_list = filter(copy(a:list), 'v:val =~# input')
+            call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
+            call setbufvar(l:new_buf, '&modifiable', 1)
+            call deletebufline(l:new_buf, 1, '$')
+            call setbufline(l:new_buf, 1, filtered_list)
+            call setbufvar(l:new_buf, '&modifiable', 0)
+        endif
+    endif
+    redraw
+    let entering = RunPickerWhile(l:new_buf, input, a:list)
 endfunction
 
 

@@ -4,7 +4,6 @@ execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 execute 'source' s:config_path . './spectroscope/bind_groups.vim'
 execute 'source' s:config_path . './spectroscope/cached.vim'
 
-let g:files_blacklist = ['build', '.git']
 
 function! FilterList(bufnr, pattern)
     if a:pattern ==# ''
@@ -21,8 +20,10 @@ endfunction
 
 function! FindFiles()
     let l:files = g:files_cached
+
     if empty(l:files)
-        let l:files = FindFilesInCWDSystemBased(g:files_blacklist)
+        echom "looking for them again"
+        let l:files = FindFilesInCWDSystemBased()
     endif
 
     if !empty(l:files)
@@ -34,10 +35,11 @@ endfunction
 function! FindFilesWithFilter()
     let l:files = g:files_cached
     if empty(l:files)
-        let l:files = FindFilesInCWDSystemBased(g:files_blacklist)
+        let l:files = FindFilesInCWDSystemBased()
     endif
 
     if !empty(l:files)
+
         call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'filelist', 0, 0)
     else
         echo "No files found in current directory."
@@ -47,7 +49,7 @@ endfunction
 function! LastFileWithFilter()
     let l:files = g:files_cached
     if empty(l:files)
-        let l:files = FindFilesInCWDSystemBased(g:files_blacklist)
+        let l:files = FindFilesInCWDSystemBased()
     endif
 
     if !empty(l:files)
