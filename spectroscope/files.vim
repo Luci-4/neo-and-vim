@@ -5,6 +5,14 @@ execute 'source' s:config_path . './spectroscope/bind_groups.vim'
 execute 'source' s:config_path . './spectroscope/cached.vim'
 
 
+function! FileFilterCallback(list, input)
+    let l:list = 
+    let input = a:input
+    let filtered_list = filter(copy(list), 'v:val =~# input')
+    call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
+    return filtered_list
+endfunction
+
 function! FilterList(bufnr, pattern)
     if a:pattern ==# ''
         let l:filtered = s:current_list
@@ -40,7 +48,7 @@ function! FindFilesWithFilter()
 
     if !empty(l:files)
 
-        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'filelist', 0, 0)
+        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'FileFilterCallback', 'filelist', 0, 0)
     else
         echo "No files found in current directory."
     endif
@@ -53,7 +61,7 @@ function! LastFileWithFilter()
     endif
 
     if !empty(l:files)
-        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'filelist', 0, 1)
+        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'FileFilterCallback', 'filelist', 0, 1)
     else
         echo "No files found in current directory."
     endif

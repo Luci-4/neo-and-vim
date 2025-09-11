@@ -66,7 +66,8 @@ function! SetupSpecialListBufferPicker()
     endif
 endfunction
 
-function! RunPickerWhile(buf, input, list)
+function! RunPickerWhile(buf, input, list, filter_callback)
+
     call clearmatches()
     let l:new_buf = a:buf 
     let match_id = -1
@@ -113,8 +114,7 @@ function! RunPickerWhile(buf, input, list)
         if empty(input)
             let filtered_list = copy(list)
         else
-            let filtered_list = filter(copy(list), 'v:val =~# input')
-            call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
+            let filtered_list = call(a:filter_callback, [list, input]) 
         endif
 
         call setbufvar(l:new_buf, '&modifiable', 1)
@@ -168,7 +168,7 @@ function! RunPickerWhile(buf, input, list)
     endwhile
 endfunction
 
-function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical, reopen, ...)
+function! OpenSpecialListBufferPicker(list, direction_binds, filter_callback, filetype, vertical, reopen, ...)
     if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
         call SetupSpecialListBufferPicker()
     endif
@@ -194,7 +194,6 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical,
         call setbufvar(l:new_buf, 'direction_binds', a:direction_binds)
     else
         execute l:win . 'wincmd w'
-        " call RunPickerWhile(g:special_list_buf, "", [])
     endif
 
 
@@ -204,7 +203,7 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical,
         if empty(input)
             let filtered_list = copy(a:list)
         else
-            let filtered_list = filter(copy(a:list), 'v:val =~# input')
+            let filtered_list = call(a:filter_callback, [copy(a:list), input])
             call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
             call setbufvar(l:new_buf, '&modifiable', 1)
             call deletebufline(l:new_buf, 1, '$')
@@ -213,7 +212,7 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filetype, vertical,
         endif
     endif
     redraw
-    let entering = RunPickerWhile(l:new_buf, input, a:list)
+    let entering = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback)
 endfunction
 
 

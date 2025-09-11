@@ -1,5 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/spectroscope/files.vim'
+execute 'source' s:config_path . '/spectroscope/grep.vim'
 execute 'source' s:config_path . '/spectroscope/git.vim'
 execute 'source' s:config_path . '/spectroscope/messages.vim'
 
@@ -11,6 +12,7 @@ nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 nnoremap <Leader>ff :call FindFiles()<CR>
 nnoremap <Leader>fs :call FindFilesWithFilter()<CR>
 nnoremap <Leader>fsh :call LastFileWithFilter()<CR>
+nnoremap <leader>ss :call FindStringWithFilter()<CR>
 " nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
 
 nnoremap <leader><leader> <c-^>
