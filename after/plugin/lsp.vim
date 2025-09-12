@@ -1,6 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/system_check.vim'
-let g:lsp_file_patterns = ['*.c', '*.cpp', '*.h', '*.hpp']
+let g:lsp_file_patterns = ['*.c', '*.cpp', '*.cc', '*.h', '*.hpp']
 
 let g:files_project_graph = {}
 let g:breadcrumbs = "__"
@@ -387,38 +387,6 @@ function! s:lsp_handle_definition(channel, msg) abort
     endif
 endfunction
 
-function BufVarExists(bufnr, varname) abort
-    let l:val = getbufvar(a:bufnr, a:varname, v:null)
-    return l:val isnot v:null
-endfunction
-
-function BufVarDictSet(bufnr, varname, key, value) abort
-    let buf_dict = getbufvar(a:bufnr, a:varname, {})
-
-    if type(buf_dict) != type({})
-        echohl WarningMsg
-        echom 'Buffer variable '.a:varname.' is not a dictionary'
-        echohl None
-        return
-    endif
-
-    let buf_dict[a:key] = a:value
-
-    call setbufvar(a:bufnr, a:varname, buf_dict)
-endfunction
-
-function s:generate_sign_cache_key(diag)
-    let l:props = s:get_diagnostic_props_from_severity(a:diag.severity)
-    let l:line = a:diag.range.end.line+1
-    return 'line='. l:line .' name='.l:props.sign_name
-endfunction
-
-function s:generate_virtual_text_cache_key(diag)
-    let l:props = s:get_diagnostic_props_from_severity(a:diag.severity)
-    let l:line = a:diag.range.end.line + 1
-    return 'line' . l:line .'type' . l:props.prop_type . 'text' . l:props.sign_text . " " . a:diag.message
-endfunction
-
 function! s:get_diagnostic_props_from_severity(sev) abort
     if a:sev == 1
         return {
@@ -444,74 +412,11 @@ function! s:get_diagnostic_props_from_severity(sev) abort
                 \ }
 endfunction
 
-function s:delete_diag_prop_cache(bufnr)
-    if BufVarExists(a:bufnr, 'diag_cache_virtual_text')
-        call setbufvar(a:bufnr, "diag_cache_virtual_text", {})
-    endif
-    if BufVarExists(a:bufnr, 'diag_cache_sign')
-        call setbufvar(a:bufnr, "diag_cache_sign", {}) 
-    endif
-endfunction
+
 function! ClearAllDiagnostics(buf)
-
-let l:buf = a:buf
-let l:diag_cache_sign = getbufvar(l:buf, "diag_cache_sign")
-for key in keys(l:diag_cache_sign)
-    execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
-endfor
-
-
-let l:diag_cache_virtual_text = getbufvar(l:buf, "diag_cache_virtual_text")
-for key in keys(l:diag_cache_virtual_text)
-    call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
-endfor
-
-" execute 'sign unplace * buffer=' . a:buf
-
-" if exists('g:vim_lsp_virtual_text_type_defined')
-"     for l:type in [
-    "         \ 'vim_lsp_virtual_text_error',
-    "         \ 'vim_lsp_virtual_text_warning',
-    "         \ 'vim_lsp_virtual_text_info'
-    "     \ ]
-    "         call prop_remove({'all': v:true, 'type': l:type, 'bufnr': a:buf})
-    "     endfor
-    " endif
-endfunction
-function! ClearExpiredDiagnostics(bufnr, diagnostics) abort
-    let l:buf = a:bufnr
-    if !BufVarExists(l:buf, 'diag_cache_virtual_text')
-        call setbufvar(l:buf, "diag_cache_virtual_text", {})
-    endif
-    if !BufVarExists(l:buf, 'diag_cache_sign')
-        call setbufvar(l:buf, "diag_cache_sign", {})
-    endif
-
-    let l:new_diag_sign = {} 
-    let l:new_diag_virt = {} 
-    for diag in a:diagnostics
-        let l:cache_sign_key = s:generate_sign_cache_key(diag)
-        let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(diag)
-        let l:new_diag_sign[l:cache_sign_key] = 1
-        let l:new_diag_virt[l:cache_virtual_text_key] = 1
-    endfor
-
-    let l:diag_cache_sign = getbufvar(l:buf, "diag_cache_sign")
-    for key in keys(l:diag_cache_sign)
-        if !has_key(l:new_diag_sign, key)
-            execute 'sign unplace '. l:diag_cache_sign[key].' buffer='.l:buf
-        endif
-    endfor
-
-
-    let l:diag_cache_virtual_text = getbufvar(l:buf, "diag_cache_virtual_text")
-    for key in keys(l:diag_cache_virtual_text)
-        if !has_key(l:new_diag_virt, key)
-            call prop_remove({'id': l:diag_cache_virtual_text[key], 'bufnr': l:buf})
-        endif
-    endfor
-
-
+    let l:buf = a:buf
+    execute 'sign unplace * buffer=' . l:buf
+    call prop_remove({'types': [ 'vim_lsp_virtual_text_error', 'vim_lsp_virtual_text_warning',  'vim_lsp_virtual_text_info'], 'bufnr': l:buf})
 endfunction
 
 
@@ -538,8 +443,6 @@ if !exists('g:vim_lsp_virtual_text_type_defined')
 endif
 
 function! ShowDiagnostic(bufnr, diag) abort
-
-
     if type(a:diag) != type({})
         echoerr "ShowDiagnostic expects a dictionary"
         return
@@ -563,15 +466,7 @@ function! ShowDiagnostic(bufnr, diag) abort
         execute 'sign define LspDiagInfo    text=I texthl=Todo'
         let g:lsp_diag_signs_defined = 1
     endif
-
-
-    let l:cache_sign_key = s:generate_sign_cache_key(a:diag)
-
-    if !has_key(getbufvar(l:buf, "diag_cache_sign"), l:cache_sign_key)
-        execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
-        call BufVarDictSet(l:buf, "diag_cache_sign", l:cache_sign_key, l:end_line)
-    endif
-
+    execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
     if !exists('g:lsp_diag_virtual_text_align')
         let g:lsp_diag_virtual_text_align = 'after'
     endif
@@ -582,22 +477,20 @@ function! ShowDiagnostic(bufnr, diag) abort
         let g:lsp_diag_virtual_text_wrap = 'wrap'
     endif
 
+    if bufloaded(l:buf)
+        let l:prop_id = prop_add(
+                    \ l:end_line, 0,
+                    \ {
+                    \   'type': l:prop_type,
+                    \   'text': l:sign_text . " " . l:msg,
+                    \   'bufnr': l:buf,
+                    \   'text_align': g:lsp_diag_virtual_text_align,
+                    \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
+                    \   'text_wrap': g:lsp_diag_virtual_text_wrap
+                    \ })
 
-    let l:cache_virtual_text_key = s:generate_virtual_text_cache_key(a:diag)
-    if !has_key(getbufvar(l:buf, "diag_cache_virtual_text"), l:cache_virtual_text_key)
-
-        if bufloaded(l:buf)
-            let l:prop_id = prop_add(
-                        \ l:end_line, 0,
-                        \ {
-                        \   'type': l:prop_type,
-                        \   'text': l:sign_text . " " . l:msg,
-                        \   'bufnr': l:buf,
-                        \   'text_align': g:lsp_diag_virtual_text_align,
-                        \   'text_padding_left': g:lsp_diag_virtual_text_padding_left,
-                        \   'text_wrap': g:lsp_diag_virtual_text_wrap
-                        \ })
-            call BufVarDictSet(l:buf, "diag_cache_virtual_text", l:cache_virtual_text_key, l:prop_id)
+        if type(getbufvar(l:buf, 'diagnostics', -1)) != type([])
+            call setbufvar(l:buf, 'diagnostics', [])
         endif
     endif
 endfunction
@@ -610,25 +503,11 @@ function! s:on_lsp_msg(channel, msg) abort
 endfunction
 
 function s:render_cached_diagnostics()
-    let l:found_missing = 0
     let l:current_bufnr = bufnr('%')
 
-    if BufVarExists(l:current_bufnr, "diag_cache_virtual_text")
-
-        let l:result_errors = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_warning"}) 
-        let l:result_warnings = prop_find({"bufnr": l:current_bufnr, "type":  "vim_lsp_virtual_text_warning"}) 
-        let l:result_info = prop_find({"bufnr": l:current_bufnr, "type": "vim_lsp_virtual_text_info"}) 
-        if !empty(l:result_errors) || !empty(l:result_warnings) || !empty(l:result_info) 
-            return
-        endif
-    endif
-
-    if !BufVarExists(l:current_bufnr, 'diagnostics_cache')
-        return
-    endif
     call ClearAllDiagnostics(l:current_bufnr)
-    call s:delete_diag_prop_cache(l:current_bufnr)
-    for d in getbufvar(l:current_bufnr, "diagnostics_cache")
+    let l:old_diags = getbufvar(l:current_bufnr, "diagnostics", []) 
+    for d in l:old_diags 
         call ShowDiagnostic(l:current_bufnr, d)
     endfor
 
@@ -646,12 +525,13 @@ function! s:handle_msg(channel, msg) abort
         endif
         let l:diagnostics = a:msg.params.diagnostics
 
-        call setbufvar(l:bufnr, "diagnostics_cache", l:diagnostics)
-        call ClearExpiredDiagnostics(l:bufnr, l:diagnostics)
+        call ClearAllDiagnostics(l:bufnr)
+
 
         for d in l:diagnostics
             call ShowDiagnostic(l:bufnr, d)
         endfor
+        call setbufvar(l:bufnr, 'diagnostics', l:diagnostics) 
     endif
 endfunction
 
@@ -785,10 +665,13 @@ function! s:lsp_handle_semantic_tokens(channel, msg) abort
         endif
 
         let l:hlgroup = s:lsp_token_type_to_hl(l:tokenType, l:tokenMods)
-        call matchaddpos(l:hlgroup, [[l:line+1, l:char+1, l:length]])
+        call matchaddpos(l:hlgroup, [[l:line+1, l:char+1, l:length]], g:lsp_syntax_highlights_priority)
     endfor
 endfunction
 function! LSPRequestSemanticTokens() abort
+    if !get(g:, 'lsp_syntax_highlights_enabled', 1)
+        return
+    endif
     let l:msg = {
                 \ 'jsonrpc': '2.0',
                 \ 'id': 42,

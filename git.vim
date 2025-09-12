@@ -34,6 +34,9 @@ function! SetGitHighlights() abort
 endfunction
 
 function! PlaceGitHighlights() abort
+    if !get(g:, 'git_changed_highlights_enabled', 1)
+        return
+    endif
     if exists('w:git_matches')
         for id in w:git_matches
             call matchdelete(id)
@@ -53,18 +56,19 @@ function! PlaceGitHighlights() abort
     if v:shell_error != 0 || empty(l:diff_hunks)
         return
     endif
+    let l:lines_to_highlight = []
     for hunk in l:diff_hunks
         let l:parts = split(hunk, ',')
         let l:start = str2nr(l:parts[0])
         let l:len = (len(l:parts) > 1 && !empty(l:parts[1])) ? str2nr(l:parts[1]) : 1
 
         let l:lines = range(l:start, l:start + l:len - 1)
-
-        if !empty(l:lines)
-            let id = matchaddpos('GitAdded', l:lines)
+        call extend(l:lines_to_highlight, l:lines)
+    endfor
+        if !empty(l:lines_to_highlight)
+            let id = matchaddpos('GitAdded', l:lines_to_highlight)
             call add(w:git_matches, id)
         endif
-    endfor
 endfunction
 
 call SetGitHighlights()
