@@ -6,7 +6,7 @@ execute 'source' s:config_path . './spectroscope/cached.vim'
 
 
 function! FileFilterCallback(list, input)
-    let l:list = 
+    let l:list = a:list 
     let input = a:input
     let filtered_list = filter(copy(list), 'v:val =~# input')
     call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
