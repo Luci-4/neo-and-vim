@@ -39,10 +39,10 @@ function! s:update_input(input, char)
     endif
     let input = copy(a:input)
     if c ==# "\<BS>" || c ==# "\<Del>" || c ==# "\<C-h>"
-        if strlen(input) > 0
+        if !empty(input)
             let input = input[:-2]
-            return input
         endif
+        return input
     endif
     let input .= c
     return input
@@ -66,22 +66,48 @@ function! SetupSpecialListBufferPicker()
     endif
 endfunction
 
+function! s:update_results(input, filtered_list, bufnr)
+    let input = a:input
+    let filtered_list = a:filtered_list
+    let l:new_buf = a:bufnr
+    let match_id = getbufvar(l:new_buf, 'match_id')
+
+    call setbufvar(l:new_buf, '&modifiable', 1)
+    call deletebufline(l:new_buf, 1, '$')
+    call setbufline(l:new_buf, 1, filtered_list)
+    call setbufvar(l:new_buf, '&modifiable', 0)
+    if match_id != -1
+        call matchdelete(match_id)
+        call setbufvar(l:new_buf, 'match_id', -1)
+    endif
+    if !empty(input)
+        let pattern = '\V' . escape(input, '\')
+        call setbufvar(l:new_buf, 'match_id', matchadd('SpecialKey', pattern))
+    endif
+    redraw
+endfunction
+
 function! RunPickerWhile(buf, input, list, filter_callback)
 
     call clearmatches()
     let l:new_buf = a:buf 
-    let match_id = -1
+    call setbufvar(l:new_buf, 'match_id', -1)
     let input = a:input
     if empty(input)
         let input = getbufvar(l:new_buf, 'input')
     endif
-    echo input
     let list = a:list
     if empty(list)
         let list  = getbufvar(l:new_buf, 'list')
     endif
 
     let entering = 0
+    if !empty(input)
+        let filtered_list = call(a:filter_callback, [list, input]) 
+        call s:update_results(input, filtered_list, l:new_buf)
+    endif
+
+    echo input
     while 1
         let char = getchar()
         let l:is_empty = type(char) == type(0) && char == 0 
@@ -116,20 +142,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
         else
             let filtered_list = call(a:filter_callback, [list, input]) 
         endif
-
-        call setbufvar(l:new_buf, '&modifiable', 1)
-        call deletebufline(l:new_buf, 1, '$')
-        call setbufline(l:new_buf, 1, filtered_list)
-        call setbufvar(l:new_buf, '&modifiable', 0)
-        if match_id != -1
-            call matchdelete(match_id)
-            let match_id = -1
-        endif
-        if input != ''
-            let pattern = '\V' . escape(input, '\')
-            let match_id = matchadd('SpecialKey', pattern)
-        endif
-        redraw
+        call s:update_results(input, filtered_list, l:new_buf)
         echo input
     endwhile
     call setbufvar(l:new_buf, 'input', input)
@@ -168,7 +181,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
     endwhile
 endfunction
 
-function! OpenSpecialListBufferPicker(list, direction_binds, filter_callback, filetype, vertical, reopen, ...) abort
+function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, ...) abort
     if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
         call SetupSpecialListBufferPicker()
     endif
@@ -177,7 +190,7 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filter_callback, fi
     let l:win = bufwinnr(l:new_buf) 
     let l:buffer_not_opened_in_window = bufwinnr(l:new_buf) == -1
     if l:buffer_not_opened_in_window
-        call setbufvar(l:new_buf, "input", "")
+        call setbufvar(l:new_buf, "input", a:input)
         if a:vertical
             execute 'vertical sbuffer' l:new_buf
         else
@@ -197,7 +210,7 @@ function! OpenSpecialListBufferPicker(list, direction_binds, filter_callback, fi
     endif
 
 
-    let input = ''
+    let input = a:input
     if a:reopen == 1
         let input = get(get(g:last_opened_picker, a:filetype, {}), "input", '')
         if empty(input)

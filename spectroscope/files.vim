@@ -49,7 +49,7 @@ function! FindFilesWithFilter()
 
     if !empty(l:files)
 
-        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'FileFilterCallback', 'filelist', 0, 0)
+        call OpenSpecialListBufferPicker(l:files, '', g:spectroscope_picker_binds_files_directions, 'FileFilterCallback', 'filelist', 0, 0)
     else
         echo "No files found in current directory."
     endif
@@ -62,7 +62,7 @@ function! LastFileWithFilter()
     endif
 
     if !empty(l:files)
-        call OpenSpecialListBufferPicker(l:files, g:spectroscope_picker_binds_files_directions, 'FileFilterCallback', 'filelist', 0, 1)
+        call OpenSpecialListBufferPicker(l:files, '', g:spectroscope_picker_binds_files_directions, 'FileFilterCallback', 'filelist', 0, 1)
     else
         echo "No files found in current directory."
     endif
