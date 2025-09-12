@@ -81,8 +81,8 @@ function! s:update_results(input, filtered_list, bufnr)
         call setbufvar(l:new_buf, 'match_id', -1)
     endif
     if !empty(input)
-        let pattern = '\V' . escape(input, '\')
-        call setbufvar(l:new_buf, 'match_id', matchadd('SpecialKey', pattern))
+        let pattern = '\v(:\d+:)?\d+:' . '\zs' . escape(input, '\')
+        call setbufvar(l:new_buf, 'match_id', matchadd('Search', pattern))
     endif
     redraw
 endfunction
@@ -149,7 +149,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
 
     let direction_binds = getbufvar(l:new_buf, 'direction_binds')
     if !empty(input)
-        let filetype = getbufvar(l:new_buf, 'filetype')
+        let filetype = getbufvar(l:new_buf, '&filetype')
         let g:last_opened_picker[filetype] = {}
         let g:last_opened_picker[filetype]['input'] = input
         let g:last_opened_picker[filetype]['list'] = filtered_list
@@ -189,6 +189,8 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
     endif
 
     let l:new_buf = g:special_list_buf
+
+    call setbufvar(l:new_buf, '&filetype', a:filetype)
     let l:win = bufwinnr(l:new_buf) 
     let l:buffer_not_opened_in_window = bufwinnr(l:new_buf) == -1
 
@@ -211,7 +213,7 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         call setbufvar(l:new_buf, '&cursorline', 1)
         call setbufvar(l:new_buf, '&modifiable', 0)
         call setbufvar(l:new_buf, 'list', a:list)
-        call setbufvar(l:new_buf, 'filetype', a:filetype)
+        call setbufvar(l:new_buf, '&filetype', a:filetype)
         call setbufvar(l:new_buf, 'direction_binds', a:direction_binds)
     else
         execute l:win . 'wincmd w'

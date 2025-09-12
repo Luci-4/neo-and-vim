@@ -107,8 +107,8 @@ function! s:parse_grep_line(line)
     endif
 
     return {}
-
 endfunction
+
 function! OpenFileWhereString(found_string_line)
     let l:parsed_line = s:parse_grep_line(a:found_string_line)
     if empty(l:parsed_line)
