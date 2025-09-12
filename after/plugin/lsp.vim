@@ -399,14 +399,14 @@ function! s:get_diagnostic_props_from_severity(sev) abort
     if a:sev == 2
         return {
                     \ 'sign_text': 'W',
-                    \ 'hl_group': 'WarningMsg',
+                    \ 'hl_group': 'WarnMsg',
                     \ 'sign_name': 'LspDiagWarning',
                     \ 'prop_type': 'vim_lsp_virtual_text_warning'
                     \ }
     endif
     return {
                 \ 'sign_text': 'I',
-                \ 'hl_group': 'Todo',
+                \ 'hl_group': 'InfoMsg',
                 \ 'sign_name': 'LspDiagInfo',
                 \ 'prop_type': 'vim_lsp_virtual_text_info'
                 \ }
@@ -428,13 +428,13 @@ if !exists('g:vim_lsp_virtual_text_type_defined')
                 \ 'display': 'right_align'
                 \ })
     call prop_type_add('vim_lsp_virtual_text_warning', {
-                \ 'highlight': 'WarningMsg',
+                \ 'highlight': 'WarnMsg',
                 \ 'combine': 1,
                 \ 'priority': 10,
                 \ 'display': 'right_align'
                 \ })
     call prop_type_add('vim_lsp_virtual_text_info', {
-                \ 'highlight': 'Todo',
+                \ 'highlight': 'InfoMsg',
                 \ 'combine': 1,
                 \ 'priority': 10,
                 \ 'display': 'right_align'
@@ -462,8 +462,8 @@ function! ShowDiagnostic(bufnr, diag) abort
 
     if !exists('g:lsp_diag_signs_defined')
         execute 'sign define LspDiagError   text=E texthl=Error'
-        execute 'sign define LspDiagWarning text=W texthl=WarningMsg'
-        execute 'sign define LspDiagInfo    text=I texthl=Todo'
+        execute 'sign define LspDiagWarning text=W texthl=WarnMsg'
+        execute 'sign define LspDiagInfo    text=I texthl=InfoMsg'
         let g:lsp_diag_signs_defined = 1
     endif
     execute 'sign place '.l:end_line.' line='.l:end_line.' name='.l:sign_name.' buffer='.l:buf
@@ -586,6 +586,90 @@ function! LSPReferences() abort
                 \ }
     echom l:msg
     call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_references')})
+endfunction
+
+function! LSPComplete() abort
+    let l:msg = {
+                \ 'jsonrpc': '2.0',
+                \ 'id': 5,
+                \ 'method': 'textDocument/completion',
+                \ 'params': {
+                \   'textDocument': {'uri': s:lsp_text_document_uri()},
+                \   'position': s:lsp_position()
+                \ }
+                \ }
+    call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_completion')})
+endfunction
+
+function! s:lsp_handle_completion(channel, msg) abort
+    if has_key(a:msg, 'error')
+        echoerr a:msg.error.message
+        return
+    endif
+
+    if !has_key(a:msg, 'result') || empty(a:msg.result)
+        return
+    endif
+
+    let l:items = a:msg.result
+    " LSP spec: result can be {items: [...], isIncomplete: v:true} or just [...]
+    if type(l:items) == type({})
+        let l:items = l:items.items
+    endif
+
+    let l:completions = map(l:items, 'get(v:val, "label", "")')
+
+    if empty(l:completions)
+        return
+    endif
+
+    call s:show_completion_popup(l:completions)
+endfunction
+
+function! s:show_completion_popup(items) abort
+    if exists('s:completion_popup') && s:completion_popup > 0
+        call popup_close(s:completion_popup)
+    endif
+
+    let s:completion_popup = popup_create(a:items, {
+                \ 'pos': 'botleft',
+                \ 'line': 'cursor+1',
+                \ 'col': 'cursor',
+                \ 'wrap': v:false,
+                \ 'border': [],
+                \ 'padding': [0,1,0,1],
+                \ 'highlight': 'Normal',
+                \ 'borderhighlight': ['MoreMsg'],
+                \ 'filter': function('s:completion_popup_filter')
+                \ })
+endfunction
+
+function! s:completion_popup_filter(popup_id, key) abort
+    if a:key == "\<CR>"
+        " Insert selected completion
+        let l:idx = popup_getpos(popup_id)['cursorline'] - 1
+        let l:text = popup_gettext(popup_id)[l:idx]
+        execute "normal! a" . l:text
+        call popup_close(popup_id)
+        let s:completion_popup = 0
+        return 1
+    elseif a:key =~# '\v(\cC|q|<Esc>)'
+        call popup_close(popup_id)
+        let s:completion_popup = 0
+        return 1
+    endif
+    return 0
+endfunction
+
+function! s:completion_popup_filter(popup_id, key) abort
+    if a:key =~# '\v(\cC|q|<Esc>)'
+        if exists('s:completion_popup') && s:completion_popup > 0
+            call popup_close(s:completion_popup)
+            let s:completion_popup = 0
+        endif
+        return 1
+    endif
+    return 0
 endfunction
 
 function! s:lsp_token_type_to_hl(type, mods) abort
