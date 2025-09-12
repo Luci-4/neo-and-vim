@@ -54,7 +54,7 @@ function! FormatSymbolForBreadcrumbs(name, kind) abort
 
         " Variable
     elseif a:kind == 13
-        let display = '𝑥 ' . a:name
+        let display = 'var ' . a:name
 
         " Default fallback
     else

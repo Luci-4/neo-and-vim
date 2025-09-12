@@ -5,25 +5,26 @@ execute 'source' s:config_path . './spectroscope/bind_groups.vim'
 execute 'source' s:config_path . './spectroscope/cached.vim'
 
 
+let s:previous_input = ''
+let s:previous_results = []
+
 function! FileFilterCallback(list, input)
+    if empty(a:input)
+        return a:input
+    endif
     let l:list = a:list 
     let input = a:input
+    if !empty(s:previous_results)
+        if stridx(input, s:previous_input) == 0 && strlen(input) > strlen(s:previous_input)
+            let filtered_list = filter(copy(s:previous_results), 'v:val =~# input')
+            let s:previous_input = input
+            let s:previous_results = l:filtered_list
+            return filtered_list
+        endif
+    endif
     let filtered_list = filter(copy(list), 'v:val =~# input')
     call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
     return filtered_list
-endfunction
-
-function! FilterList(bufnr, pattern)
-    if a:pattern ==# ''
-        let l:filtered = s:current_list
-    else
-        let l:filtered = filter(copy(s:current_list), 'v:val =~ a:pattern')
-    endif
-
-    call setbufvar(a:bufnr, '&modifiable', 1)
-    call setbufline(a:bufnr, 1, l:filtered)
-    call deletebufline(a:bufnr, len(l:filtered) + 1, '$')
-    call setbufvar(a:bufnr, '&modifiable', 0)
 endfunction
 
 function! FindFiles()

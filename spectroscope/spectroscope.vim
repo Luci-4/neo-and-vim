@@ -1,7 +1,7 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
 let s:log_file = s:config_path . "/log_char.txt"
-function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...)
+function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...) abort
 
     let l:wrap = (a:0 >= 1 ? a:1 : 0)  " default = 0 (nowrap)
     if a:vertical
@@ -168,7 +168,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
     endwhile
 endfunction
 
-function! OpenSpecialListBufferPicker(list, direction_binds, filter_callback, filetype, vertical, reopen, ...)
+function! OpenSpecialListBufferPicker(list, direction_binds, filter_callback, filetype, vertical, reopen, ...) abort
     if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
         call SetupSpecialListBufferPicker()
     endif
@@ -239,138 +239,3 @@ function! s:do_filter(input, list, popup_id, max_lines)
     call popup_settext(l:popup_id, l:popup_lines)
 endfunction
 
-function! OpenSpecialListBufferPickerFloat(list, direction_binds, filetype)
-    let l:MAX_LINES = 10
-    let filtered_list = copy(a:list)
-
-    if len(l:filtered_list) < l:MAX_LINES
-        let l:popup_lines = repeat([''], l:MAX_LINES - len(l:filtered_list)) + l:filtered_list
-    elseif len(l:filtered_list) > l:MAX_LINES
-        let l:popup_lines = l:filtered_list[len(l:filtered_list) - l:MAX_LINES :]
-    else
-        let l:popup_lines = copy(l:filtered_list)
-    endif
-
-    let l:width = &columns
-    let l:height = &lines
-
-    let l:popup_width = width - 50
-    let l:popup_height = len(l:popup_lines)
-
-    let l:row = (l:height - l:popup_height) / 2
-    let l:col = (l:width - l:popup_width) / 2
-
-    let l:popup_id = popup_create(
-      \ l:popup_lines,
-      \ {
-      \   'line': l:row,
-      \   'col': l:col,
-      \   'minwidth': l:popup_width,
-      \   'minheight': l:popup_height,
-        \ 'border_chars': ['-', '|', '-', '|', '+','+','+','+'],
-        \ 'border': [1, 1, 1, 1],
-      \   'padding': [0,1,0,1],
-      \   'pos': 'topleft',
-      \ })
-        let l:popup_bottom = l:row + l:popup_height + 2
-
-    let l:popup2_lines = ['']
-
-    let l:popup2_id = popup_create(
-          \ [],
-          \ {
-          \   'line': l:popup_bottom,
-          \   'col': l:col,  
-          \   'minwidth': l:popup_width,
-          \   'padding': [0,1,0,1],
-          \   'pos': 'topleft',
-            \ 'border': [1, 1, 1, 1 ],
-            \ 'border_chars': ['-', '|', '-', '|', '+','+','+','+']
-          \ })
-    let l:current_index_from_bottom = 0
-
-    let input = ''
-    let match_id = -1
-    redraw
-
-    let collected_mapping = ''
-    let entering = 0
-
-    " let l:linehl = [ 'MyPopupLine' ] + repeat([''], len(l:popup_lines) - 1)
-
-    " highlight MyPopupLine ctermbg=LightGrey guibg=#555555
-    " call popup_setoptions(l:popup_id, {'linehl': l:linehl})
-    " redraw
-    while 1
-        let char = getchar()
-        let l:is_empty = type(char) == type(0) && char == 0 
-        if l:is_empty
-            continue
-        endif
-        let l:ALT_KEY = 128
-        if char == char2nr('j') + l:ALT_KEY 
-            if l:current_index_from_bottom > 0
-                let l:current_index_from_bottom -= 1
-
-                " let l:highlighted = map(copy(l:popup_lines), {idx, val -> idx == l:current_index_from_bottom ? 'MyPopupLine' : ''})
-                " call popup_setoptions(l:popup_id, {'linehl': l:highlighted})
-                redraw
-            endif
-            continue
-        endif
-
-        if char == char2nr('k') + l:ALT_KEY 
-            if l:current_index_from_bottom < len(l:popup_lines) - 1
-                let l:current_index_from_bottom += 1
-                " let l:highlighted = map(copy(l:popup_lines), {idx, val -> idx == l:current_index_from_bottom ? 'MyPopupLine' : ''})
-                " call popup_setoptions(l:popup_id, {'linehl': l:highlighted})
-                redraw
-            endif
-            continue
-        endif
-        if char == char2nr("\<CR>")
-            let entering = 1
-            break
-        endif
-        if char == char2nr("\<Esc>")
-            break  
-        endif
-
-        let input = s:update_input(input, char)
-        " call popup_settext(l:popup2_id, input)
-        call popup_setoptions(l:popup2_id, {'title': input})
-        " echo input
-        if exists('s:filter_timer')
-            call timer_stop(s:filter_timer)
-        endif
-
-        let s:filter_timer = timer_start(100, {-> s:do_filter(input, a:list, l:popup_id, l:MAX_LINES)})
-        redraw
-    endwhile
-
-    if entering == 1
-        while 1
-            echo "Direction:"
-            let direction = getchar()
-            if direction == char2nr("\<Esc>")
-                break
-            endif
-
-
-            let char_direction = nr2char(direction)
-
-            if direction == char2nr("\<CR>")
-                let char_direction = ''
-            endif
-
-            if has_key(a:direction_binds, char_direction)
-
-                execute 'call ' . a:direction_binds[char_direction] . '("' . l:popup_lines[l:current_index_from_bottom] . '")'
-                break
-            endif
-            echo "invalid: " . nr2char(direction)
-        endwhile
-    endif
-
-
-endfunction

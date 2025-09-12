@@ -4,6 +4,7 @@ execute 'source' s:config_path . '/files_utils.vim'
 
 let s:previous_needle = ''
 let s:previous_results = [] 
+let s:full_results = {}
 
 function! GrepInCWDSystemBased(needle) abort
     if len(a:needle) < 3
