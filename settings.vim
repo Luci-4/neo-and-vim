@@ -109,3 +109,5 @@ endfunction
 autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
 set belloff=all
 set backspace=indent,eol,start
+set completeopt=menu,menuone,noselect
+

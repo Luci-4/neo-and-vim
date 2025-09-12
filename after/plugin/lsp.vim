@@ -589,6 +589,7 @@ function! LSPReferences() abort
 endfunction
 
 function! LSPComplete() abort
+    echom s:lsp_position()
     let l:msg = {
                 \ 'jsonrpc': '2.0',
                 \ 'id': 5,
@@ -617,59 +618,39 @@ function! s:lsp_handle_completion(channel, msg) abort
         let l:items = l:items.items
     endif
 
-    let l:completions = map(l:items, 'get(v:val, "label", "")')
+    " let l:completions = map(l:items, 'get(v:val, "label", "")')
 
-    if empty(l:completions)
-        return
-    endif
-
-    call s:show_completion_popup(l:completions)
+    call CustomComplete(l:items)
 endfunction
 
-function! s:show_completion_popup(items) abort
-    if exists('s:completion_popup') && s:completion_popup > 0
-        call popup_close(s:completion_popup)
+function! CustomComplete(lsp_items)
+    let prefix = matchstr(getline('.'), '\k*$')
+
+    if prefix ==# ''
+        return ''
+    endif
+    if empty(a:lsp_items)
+        return "\<C-n>"
     endif
 
-    let s:completion_popup = popup_create(a:items, {
-                \ 'pos': 'botleft',
-                \ 'line': 'cursor+1',
-                \ 'col': 'cursor',
-                \ 'wrap': v:false,
-                \ 'border': [],
-                \ 'padding': [0,1,0,1],
-                \ 'highlight': 'Normal',
-                \ 'borderhighlight': ['MoreMsg'],
-                \ 'filter': function('s:completion_popup_filter')
-                \ })
-endfunction
+    let start = col('.') - 1
 
-function! s:completion_popup_filter(popup_id, key) abort
-    if a:key == "\<CR>"
-        " Insert selected completion
-        let l:idx = popup_getpos(popup_id)['cursorline'] - 1
-        let l:text = popup_gettext(popup_id)[l:idx]
-        execute "normal! a" . l:text
-        call popup_close(popup_id)
-        let s:completion_popup = 0
-        return 1
-    elseif a:key =~# '\v(\cC|q|<Esc>)'
-        call popup_close(popup_id)
-        let s:completion_popup = 0
-        return 1
-    endif
-    return 0
-endfunction
-
-function! s:completion_popup_filter(popup_id, key) abort
-    if a:key =~# '\v(\cC|q|<Esc>)'
-        if exists('s:completion_popup') && s:completion_popup > 0
-            call popup_close(s:completion_popup)
-            let s:completion_popup = 0
+    let items = []
+    for item in a:lsp_items
+        if has_key(item, 'textEdit')
+            let edit = item.textEdit
+            let start = edit.range.start.character + 1
+            call add(items, edit.newText)
+        elseif has_key(item, 'insertText')
+            call add(items, item.insertText)
+        else
+            call add(items, item.label)
         endif
-        return 1
-    endif
-    return 0
+    endfor
+
+    " Call Vim's completion
+    call complete(start, items)
+    return ''
 endfunction
 
 function! s:lsp_token_type_to_hl(type, mods) abort
@@ -854,7 +835,14 @@ function! s:lsp_did_close() abort
 
     unlet b:lsp_opened
 endfunction
+let g:lsp_complete_timer = -1
 
+function! s:DebouncedLSPComplete() abort
+    if g:lsp_complete_timer != -1
+        call timer_stop(g:lsp_complete_timer)
+    endif
+    let g:lsp_complete_timer = timer_start(300, { -> execute('if !pumvisible() | call LSPComplete() | endif') })
+endfunction
 
 if executable('clangd')
     let g:lsp_job = job_start(['clangd', '--compile-commands-dir=build'], s:opts)
@@ -900,6 +888,7 @@ if executable('clangd')
             execute 'autocmd BufEnter ' . pat . ' call s:render_cached_diagnostics()'
             execute 'autocmd BufEnter,CursorMoved,WinEnter,VimResized,TextChanged,TextChangedI '  . pat .  ' call UpdateStatuslineWithScope()'
             execute 'autocmd BufReadPost ' . pat . ' call LSPRequestSemanticTokens()'
+            execute 'autocmd TextChangedI,TextChangedP ' . pat . ' call s:DebouncedLSPComplete()'
         endfor
     augroup END
 
@@ -909,5 +898,10 @@ if executable('clangd')
     nnoremap <leader>ds :call LSPDocumentSymbols()<CR>
     nnoremap <leader>pg :call ShowPartialProjectGraph()<CR>
     nnoremap <leader>sc :call UpdateStatuslineWithScope()<CR>
+    inoremap <expr> <M-j> pumvisible() ? "\<C-n>" : "\<M-j>"
+    inoremap <expr> <M-k> pumvisible() ? "\<C-p>" : "\<M-k>"
+    inoremap <expr> <Tab> pumvisible() ? "\<C-y>" : "\<Tab>"
+    highlight! link Pmenu Visual
+    highlight link PmenuSel Search
 endif
 
