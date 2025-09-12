@@ -181,6 +181,8 @@ function! RunPickerWhile(buf, input, list, filter_callback)
     endwhile
 endfunction
 
+
+
 function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, ...) abort
     if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
         call SetupSpecialListBufferPicker()
@@ -189,8 +191,14 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
     let l:new_buf = g:special_list_buf
     let l:win = bufwinnr(l:new_buf) 
     let l:buffer_not_opened_in_window = bufwinnr(l:new_buf) == -1
+
+    let input = a:reopen == 1 ? get(get(g:last_opened_picker, a:filetype, {}), "input", '') : a:input
     if l:buffer_not_opened_in_window
-        call setbufvar(l:new_buf, "input", a:input)
+        if a:reopen == 0
+            call ClearSpectroscopePickerCache(a:filetype)
+        endif
+
+        call setbufvar(l:new_buf, "input", input)
         if a:vertical
             execute 'vertical sbuffer' l:new_buf
         else
@@ -207,22 +215,6 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         call setbufvar(l:new_buf, 'direction_binds', a:direction_binds)
     else
         execute l:win . 'wincmd w'
-    endif
-
-
-    let input = a:input
-    if a:reopen == 1
-        let input = get(get(g:last_opened_picker, a:filetype, {}), "input", '')
-        if empty(input)
-            let filtered_list = copy(a:list)
-        else
-            let filtered_list = call(a:filter_callback, [copy(a:list), input])
-            call sort(filtered_list, {a, b -> len(a) - stridx(a, input) - (len(b) - stridx(b, input))})
-            call setbufvar(l:new_buf, '&modifiable', 1)
-            call deletebufline(l:new_buf, 1, '$')
-            call setbufline(l:new_buf, 1, filtered_list)
-            call setbufvar(l:new_buf, '&modifiable', 0)
-        endif
     endif
     redraw
     let entering = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback)

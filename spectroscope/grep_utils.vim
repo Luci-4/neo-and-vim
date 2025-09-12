@@ -2,27 +2,34 @@ let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/files_utils.vim'
 
 
-let s:previous_needle = ''
-let s:previous_results = [] 
-let s:full_results = {}
+let g:grep_spectroscope_file_type = 'greplist'
 
 function! GrepInCWDSystemBased(needle) abort
     if len(a:needle) < 3
         return []
     endif
-    if !empty(s:previous_results)
-        if stridx(a:needle, s:previous_needle) == 0 && strlen(a:needle) > strlen(s:previous_needle)
+    if !empty(g:spectroscope_picker_previous_results[g:grep_spectroscope_file_type])
+        let l:previous_query = g:spectroscope_picker_previous_query[g:grep_spectroscope_file_type]
+        if stridx(a:needle, l:previous_query) == 0 && strlen(a:needle) > strlen(l:previous_query)
             let l:filtered = []
-            for l:line in s:previous_results
+            for l:line in g:spectroscope_picker_previous_results[g:grep_spectroscope_file_type]
                 let l:parsed = s:parse_grep_line(l:line)
                 if !empty(l:parsed) && l:parsed.text =~ a:needle
                     call add(l:filtered, l:line)
                 endif
             endfor
-            let s:previous_needle = a:needle
-            let s:previous_results = l:filtered
+            let g:spectroscope_picker_previous_query[g:grep_spectroscope_file_type] = a:needle
+            let g:spectroscope_picker_previous_results[g:grep_spectroscope_file_type] = l:filtered
+
+            if !has_key(g:spectroscope_picker_all_previous_results[g:grep_spectroscope_file_type], a:needle)
+                let g:spectroscope_picker_all_previous_results[g:grep_spectroscope_file_type][a:needle] = l:filtered
+            endif
+
             return l:filtered
         endif
+    endif
+    if has_key(g:spectroscope_picker_all_previous_results[g:grep_spectroscope_file_type], a:needle)
+        return g:spectroscope_picker_all_previous_results[g:grep_spectroscope_file_type][a:needle]
     endif
     let l:files = g:files_cached
     let l:use_black_list = 0
@@ -69,8 +76,12 @@ function! GrepInCWDSystemBased(needle) abort
             call add(l:results, entry)
         endfor
     endif
-    let s:previous_needle = a:needle
-    let s:previous_results = l:results
+    let g:spectroscope_picker_previous_query[g:grep_spectroscope_file_type] = a:needle
+    let g:spectroscope_picker_previous_results[g:grep_spectroscope_file_type] = l:results
+
+    if !has_key(g:spectroscope_picker_all_previous_results[g:grep_spectroscope_file_type], a:needle)
+        let g:spectroscope_picker_all_previous_results[g:grep_spectroscope_file_type][a:needle] = l:results
+    endif
     return l:results
 endfunction
 
