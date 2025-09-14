@@ -1,5 +1,23 @@
 function! IsOnLinux()
-    return has('unix') && executable('uname') && system('uname -s') =~? '^linux'
+    if !has('unix')
+        return 0
+    endif
+
+    if has('linux')
+        return 1
+    endif
+
+    let l:ostype = get($, 'OSTYPE', '')
+    if l:ostype =~? 'linux'
+        return 1
+    endif
+
+    let l:machtype = get($, 'MACHTYPE', '')
+    if l:machtype =~? 'linux'
+        return 1
+    endif
+
+    return 0
 endfunction
 
 function! IsOnWindows() 
