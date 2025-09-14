@@ -62,7 +62,15 @@ function! GrepInCWDSystemBased(needle) abort
         endif
 
         
-        let l:results = split(systemlist(l:cmd), '\n')
+        let l:sys_output = systemlist(l:cmd)
+        if type(l:sys_output) == type([])
+            let l:results = l:sys_output
+        elseif type(l:sys_output) == type('')
+            let l:results = split(l:sys_output, '\n')
+        else
+            let l:results = []
+        endif
+        return l:results
 
     else
         call setqflist([])
