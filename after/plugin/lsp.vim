@@ -548,9 +548,21 @@ function! s:lsp_handle_references(channel, msg) abort
         echom a:msg.result
         for ref in a:msg.result
             let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
+
+            let l:file = fnamemodify(l:file, ":.")
             let l:line = ref.range.start.line + 1
             let l:col  = ref.range.start.character + 1
-            call add(l:formatted, l:file . ':' . l:line . ':' . l:col . ':' . "not yet implemented")
+            if filereadable(l:file)
+                let l:lines = readfile(l:file)
+                if l:line <= len(l:lines)
+                    let l:text = l:lines[l:line - 1]
+                else
+                    let l:text = ''
+                endif
+            else
+                let l:text = ''
+            endif
+            call add(l:formatted, l:file . ':' . l:line . ':' . l:col . ':' . l:text)
         endfor
         call OpenSpecialListBuffer(l:formatted, g:spectroscope_binds_reference_directions, 'referenceslist', 1)
     else
