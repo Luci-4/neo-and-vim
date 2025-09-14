@@ -20,7 +20,7 @@ function! FindFilesInCWDSystemBased()
         endif
     endif
     let l:files = globpath(l:root, '**/*', 0, 1) 
-    if !empty(l:blacklist_directories)
+    if !empty(g:blacklist_directories)
         for dir in g:blacklist_directories
             let l:files = filter(l:files, 'v:val !~# "/" . dir . "/"')
         endfor
