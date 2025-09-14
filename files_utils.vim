@@ -1,5 +1,4 @@
 let s:config_path = split(&runtimepath, ',')[0]
-execute 'source' s:config_path . './profiler.vim'
 
 function! FindFilesInCWDSystemBased()
     let l:root = getcwd()
