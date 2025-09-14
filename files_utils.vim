@@ -18,7 +18,7 @@ function! FindFilesInCWDSystemBased()
 
 
     let l:files = globpath(l:root, '**/*', 0, 1)
-
+    let l:files = filter(l:files, 'isdirectory(v:val) == 0')
     if !empty(g:blacklist_directories)
         for dir in g:blacklist_directories
             let l:files = filter(l:files, 'v:val !~# "/" . dir . "/"')
@@ -30,6 +30,6 @@ function! FindFilesInCWDSystemBased()
     endfor
 
     let l:files = filter(l:files, 'v:val =~# "^" . escape(l:root, "/\\")')
-    let l:files = map(l:files, 'fnamemodify(v:val, ":.")')
+
     return l:files
 endfunction
