@@ -117,23 +117,40 @@ function! RunPickerWhile(buf, input, list, filter_callback)
         if l:is_empty
             continue
         endif
-        let l:ALT_KEY = 128
-        if char == char2nr('j') + l:ALT_KEY 
-            normal! j 
-            redraw
-            continue
-        endif
 
-        if char == char2nr('k') + l:ALT_KEY 
-            normal! k 
-            redraw
-            continue
+        if IsOnLinux()
+            let l:ALT_KEY_LINUX = 27
+            if char == l:ALT_KEY_LINUX
+                let next = getchar()        
+                if next == char2nr('j')
+                    normal! j 
+                    redraw
+                endif
+                if next == char2nr('k')
+                    normal! k 
+                    redraw
+                endif
+                continue
+            endif
+        else
+            let l:ALT_KEY = 128
+            if char == char2nr('j') + l:ALT_KEY 
+                normal! j 
+                redraw
+                continue
+            endif
+
+            if char == char2nr('k') + l:ALT_KEY 
+                normal! k 
+                redraw
+                continue
+            endif
         endif
         if char == char2nr("\<CR>")
             let entering = 1
             break
         endif
-        if char == char2nr("\<Esc>")
+        if char == char2nr("\<")
             let entering = 0
             break
         endif
