@@ -30,6 +30,6 @@ function! FindFilesInCWDSystemBased()
     endfor
 
     let l:files = filter(l:files, 'v:val =~# "^" . escape(l:root, "/\\")')
-
+    let l:files = map(l:files, 'fnamemodify(v:val, ":.")')
     return l:files
 endfunction
