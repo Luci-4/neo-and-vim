@@ -899,6 +899,8 @@ if executable('clangd')
     nnoremap <leader>sc :call UpdateStatuslineWithScope()<CR>
     inoremap <expr> <M-j> pumvisible() ? "\<C-n>" : "\<M-j>"
     inoremap <expr> <M-k> pumvisible() ? "\<C-p>" : "\<M-k>"
+    inoremap <expr> <Esc>j pumvisible() ? "\<C-n>" : "\<M-j>"
+    inoremap <expr> <Esc>k pumvisible() ? "\<C-p>" : "\<M-k>"
     inoremap <expr> <Tab> pumvisible() ? "\<C-y>" : "\<Tab>"
     highlight! link Pmenu Visual
     highlight link PmenuSel Search
