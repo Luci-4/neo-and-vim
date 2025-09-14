@@ -16,23 +16,6 @@ function! FindFilesInCWDSystemBased()
         return l:files
     endif
 
-    if IsOnLinux()
-        " if executable('rg')
-        "     let l:cmd = 'rg --files --hidden --follow ' .
-        "                 \ g:blacklist_args_cached_for_tools['rg'] . ' ' .
-        "                 \ shellescape(l:root)
-        "     let l:files = split(system(l:cmd), "\n")
-        "     let l:files = map(l:files, 'fnamemodify(v:val, ":." )')
-        "     return l:files
-
-        " elseif executable('find')
-        "     let l:cmd = 'find ' . shellescape(l:root) . ' -type f' .
-        "                 \ g:blacklist_args_cached_for_tools['find']
-        "     let l:files = split(system(l:cmd), "\n")
-        "     let l:files = map(l:files, 'fnamemodify(v:val, ":." )')
-        "     return l:files
-        " endif
-    endif
 
     let l:files = globpath(l:root, '**/*', 0, 1)
 
@@ -47,6 +30,6 @@ function! FindFilesInCWDSystemBased()
     endfor
 
     let l:files = filter(l:files, 'v:val =~# "^" . escape(l:root, "/\\")')
-
+    let l:files = map(l:files, 'fnamemodify(v:val, ":.")')
     return l:files
 endfunction
