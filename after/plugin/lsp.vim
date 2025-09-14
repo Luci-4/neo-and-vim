@@ -544,16 +544,15 @@ endfunction
 
 function! s:lsp_handle_references(channel, msg) abort
     if has_key(a:msg, 'result') && !empty(a:msg.result)
-        new
-        setlocal buftype=nofile bufhidden=wipe nobuflisted noswapfile
-        call setline(1, ['References:'])
+        let l:formatted = []
+        echom a:msg.result
         for ref in a:msg.result
             let l:file = substitute(ref.uri, '^'.TernaryIfLinux('file://', 'file:///'), '', '')
             let l:line = ref.range.start.line + 1
             let l:col  = ref.range.start.character + 1
-            call append('$', l:file . ':' . l:line . ':' . l:col)
+            call add(l:formatted, l:file . ':' . l:line . ':' . l:col . ':' . "not yet implemented")
         endfor
-        normal! gg
+        call OpenSpecialListBuffer(l:formatted, g:spectroscope_binds_reference_directions, 'referenceslist', 1)
     else
         echom "No references found"
     endif

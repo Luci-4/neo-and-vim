@@ -1,8 +1,8 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
-execute 'source' s:config_path . './spectroscope/bind_groups.vim'
-execute 'source' s:config_path . './spectroscope/cached.vim'
+execute 'source' s:config_path . '/spectroscope/bind_groups.vim'
+execute 'source' s:config_path . '/spectroscope/cached.vim'
 
 function! GrepFilterCallback(list, input)
     " let input = a:input

@@ -1,6 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
-execute 'source' s:config_path . './spectroscope/bind_groups.vim'
+execute 'source' s:config_path . '/spectroscope/bind_groups.vim'
 
 let g:recent_files = []
 

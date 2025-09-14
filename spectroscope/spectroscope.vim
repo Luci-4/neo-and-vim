@@ -4,7 +4,7 @@ let s:log_file = s:config_path . "/log_char.txt"
 function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...) abort
 
     let l:wrap = (a:0 >= 1 ? a:1 : 0)  " default = 0 (nowrap)
-    if a:vertical
+    if a:vertical == 1
         vertical enew
     else
         enew
@@ -16,6 +16,9 @@ function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...) abort
     call setbufvar(l:new_buf, '&modifiable', 1)
     call setbufvar(l:new_buf, '&filetype', a:filetype)
     call setbufvar(l:new_buf, '&buflisted', 0)
+
+    call setbufvar(l:new_buf, '&cursorline', 1)
+    highlight CursorLine ctermbg=LightGrey guibg=#555555 gui=NONE cterm=NONE
     call setbufvar(l:new_buf, '&wrap', l:wrap)
 
     " call setline(1, a:list)

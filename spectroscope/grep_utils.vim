@@ -1,5 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/files_utils.vim'
+execute 'source' s:config_path . '/spectroscope/vimgrep_utils.vim'
 
 
 let g:grep_spectroscope_file_type = 'greplist'
@@ -13,7 +14,7 @@ function! GrepInCWDSystemBased(needle) abort
         if stridx(a:needle, l:previous_query) == 0 && strlen(a:needle) > strlen(l:previous_query)
             let l:filtered = []
             for l:line in g:spectroscope_picker_previous_results[g:grep_spectroscope_file_type]
-                let l:parsed = s:parse_grep_line(l:line)
+                let l:parsed = ParseGrepLine(l:line)
                 if !empty(l:parsed) && l:parsed.text =~ a:needle
                     call add(l:filtered, l:line)
                 endif
@@ -85,94 +86,4 @@ function! GrepInCWDSystemBased(needle) abort
     return l:results
 endfunction
 
-
-function! s:parse_grep_line(line)
-    let m = matchlist(a:line, '\v^([^:]+):(\d+):(\d+):(.*)$')
-    if !empty(m)
-        return {
-                    \ 'file': m[1],
-                    \ 'line': str2nr(m[2]),
-                    \ 'col': str2nr(m[3]),
-                    \ 'text': m[4]
-                    \ }
-    endif
-    let m = matchlist(a:line, '\v^([^:]+):(\d+):(.*)$')
-    if !empty(m)
-        return {
-                    \ 'file': m[1],
-                    \ 'line': str2nr(m[2]),
-                    \ 'col': 0,
-                    \ 'text': m[3]
-                    \ }
-    endif
-
-    return {}
-endfunction
-
-function! OpenFileWhereString(found_string_line)
-    let l:parsed_line = s:parse_grep_line(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call OpenFileAt(l:file, l:line, get(l:parsed_line, 'col', 1))
-endfunction
-
-function! OpenFileWhereStringVSplitRight(found_string_line)
-    let l:parsed_line = s:parse_grep_line(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call OpenFileVSplitRightAt(l:file, l:line, get(l:parsed_line, 'col', 1))
-endfunction
-
-function! OpenFileWhereStringInDirectionH(found_string_line)
-    let l:parsed_line = s:parse_grep_line(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction(l:file, l:line, get(l:parsed_line, 'col', 1), 'h')
-endfunction
-
-function! OpenFileWhereStringInDirectionJ(found_string_line)
-    let l:parsed_line = s:parse_grep_line(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction(l:file, l:line, get(l:parsed_line, 'col', 1), 'j')
-endfunction
-
-function! OpenFileWhereStringInDirectionK(found_string_line)
-    let l:parsed_line = s:parse_grep_line(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction(l:file, l:line, get(l:parsed_line, 'col', 1), 'k')
-endfunction
-
-function! OpenFileWhereStringInDirectionL(found_string_line)
-    let l:parsed_line = s:parse_grep_line(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction(l:file, l:line, get(l:parsed_line, 'col', 1), 'l')
-endfunction
 

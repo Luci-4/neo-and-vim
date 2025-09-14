@@ -41,3 +41,12 @@ let g:spectroscope_picker_binds_grep_directions = {
             \'k': 'OpenFileWhereStringInDirectionK',
             \'l': 'OpenFileWhereStringInDirectionL',
             \ }
+
+let g:spectroscope_binds_reference_directions = {
+            \'<CR>': 'OpenFileWhereString', 
+            \'<CR>v': 'OpenFileWhereStringVSplitRight',
+            \'<CR>h': 'OpenFileWhereStringInDirectionH',
+            \'<CR>j': 'OpenFileWhereStringInDirectionJ',
+            \'<CR>k': 'OpenFileWhereStringInDirectionK',
+            \'<CR>l': 'OpenFileWhereStringInDirectionL',
+            \ }

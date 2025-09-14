@@ -1,7 +1,7 @@
 let s:config_path = split(&runtimepath, ',')[0]
-execute 'source' s:config_path . './spectroscope/cached.vim'
-execute 'source' s:config_path . './spectroscope/blacklist.vim'
-execute 'source' s:config_path . './system_check.vim'
+execute 'source' s:config_path . '/spectroscope/cached.vim'
+execute 'source' s:config_path . '/spectroscope/blacklist.vim'
+execute 'source' s:config_path . '/system_check.vim'
 
 function! AsyncCache() abort
     call timer_start(0, { -> s:GenerateFileCache() })

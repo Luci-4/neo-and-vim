@@ -54,3 +54,4 @@ nnoremap <C-M-k> <C-y>
 tnoremap <Esc> <C-\><C-n>
 
 nnoremap <leader><CR> :execute 'terminal python ' . expand('%:p')<CR>
+
