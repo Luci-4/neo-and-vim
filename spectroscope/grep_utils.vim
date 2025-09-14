@@ -61,6 +61,7 @@ function! GrepInCWDSystemBased(needle) abort
             let cmd = 'grep -nH -e ' . shellescape(a:needle) . ' ' . join(g:files_cached_shell_escaped, ' ')
         endif
 
+        
         let l:results = split(systemlist(l:cmd), '\n')
 
     else

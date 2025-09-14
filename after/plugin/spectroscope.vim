@@ -44,8 +44,7 @@ function! s:ExcludeArgsForFilesTool(tool, blacklist_files, blacklist_directories
         elseif a:tool ==# 'fd'
             call add(l:args, '--exclude ' . l:dir)
         elseif a:tool ==# 'find'
-            " find uses ! -path "dir/*" for directory exclusion
-            call add(l:args, '! -path ' . shellescape(l:dir . '/*'))
+            call add(l:args, '! -path ' . shellescape(l:dir) . ' ! -path ' . shellescape(l:dir . '/*'))
         elseif a:tool ==# 'grep'
             call add(l:args, '--exclude-dir=' . shellescape(l:dir))
         endif

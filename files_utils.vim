@@ -3,15 +3,18 @@ let s:config_path = split(&runtimepath, ',')[0]
 function! FindFilesInCWDSystemBased()
     let l:root = getcwd()
     let l:files = []
+    let l:files = g:files_cached
+    if !empty(l:files)
+        return l:files
+    endif
 
     if executable('fd')
         let l:cmd = 'fd . --type f --hidden --follow' . g:blacklist_args_cached_for_tools['fd'] . ' --base-directory ' . shellescape(l:root)
         let l:files = split(system(l:cmd), "\n")
-        echom "running fd: " . l:cmd
         return l:files
-
+    endif
     if IsOnLinux()
-        elseif executable('rg')
+        if executable('rg')
             let l:files = split(system('rg --files --hidden --follow ' . g:blacklist_args_cached_for_tools['rg'] . ' ' . shellescape(l:root)), "\n")
             return l:files
         elseif executable('find')
