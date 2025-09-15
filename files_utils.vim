@@ -33,3 +33,71 @@ function! FindFilesInCWDSystemBased()
     let l:files = map(l:files, 'fnamemodify(v:val, ":.")')
     return l:files
 endfunction
+
+
+function! OpenFileInDirection(file, direction)
+    call OpenFileInDirectionAt(a:file, a:direction, 0, 0)
+endfunction
+
+function OpenFileAt(file, line, ...)
+    let l:col = a:0 ? a:1 : 1
+    call OpenFileInDirectionAt(a:file, '', a:line, l:col)
+endfunction
+
+function OpenFileVSplitAt(file, line, ...)
+    let l:col = a:0 ? a:1 : 1
+    call OpenFileInDirectionAt(a:file, 'v', a:line, l:col)
+endfunction
+
+function! OpenFileInDirectionAt(file, direction, line, col)
+    if empty(a:file)
+        echo "No file provided"
+        return
+    endif
+
+    if !filereadable(a:file)
+        echo "File does not exist: " . a:file
+        return
+    endif
+
+    if !empty(a:direction)
+        if a:direction ==# 'v'
+            execute 'vsplit ' . fnameescape(a:file)
+        else
+            execute "wincmd " . a:direction
+        endif
+    endif
+    execute "edit " . fnameescape(a:file)
+
+    if a:line != 0 || a:col != 0
+        call cursor(a:line, a:col)
+    endif
+endfunction
+
+function! OpenFileGeneric(file, ...)
+    if empty(a:file)
+        echo "No file provided"
+        return
+    endif
+
+    if !filereadable(a:file)
+        echo "File does not exist: " . a:file
+        return
+    endif
+    let l:direction = get(a:000, 0, '')   " '', 'v', 'h', etc.
+    let l:line      = get(a:000, 1, 1)    " default 1
+    let l:col       = get(a:000, 2, 1)    " default 1
+
+    if l:direction ==# 'v'
+        execute 'vsplit ' . fnameescape(a:file)
+    else
+        if l:direction ==# 'h' || l:direction ==# 'l' || l:direction ==# 'k' || l:direction ==# 'j'
+            execute "wincmd " . l:direction
+        endif
+        execute "edit " . fnameescape(a:file)
+    endif
+
+    if l:line > 1 || l:col > 1
+        call cursor(l:line, l:col)
+    endif
+endfunction

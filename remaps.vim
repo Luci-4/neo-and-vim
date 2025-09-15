@@ -20,6 +20,7 @@ nnoremap <Leader>fs :call FindFilesWithFilter()<CR>
 
 nnoremap <leader>/ :call FindStringWithFilter()<CR>
 nnoremap <leader>* :call FindStringWordUnderCursorWithFilter()<CR>
+
 " nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
 
 nnoremap <leader><leader> <c-^>

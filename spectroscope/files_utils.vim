@@ -1,42 +1,24 @@
 function! OpenFile(file)
-    if filereadable(a:file)
-        execute 'keepalt edit ' . fnameescape(a:file)
-    else
-        echo "File does not exist: " . a:file
-    endif
+    call OpenFileGeneric(a:file)
 endfunction
 
 function! OpenFileVSplitRight(file)
-    if filereadable(a:file)
-        " Open file in a vertical split on the right (default)
-        execute 'vsplit ' . fnameescape(a:file)
-    else
-        echo "File does not exist: " . a:file
-    endif
-endfunction
-
-function s:open_file_in_direction(file, direction)
-    if empty(a:file)
-        echo "No file under cursor"
-        return
-    endif
-    execute "wincmd " . a:direction
-    execute "edit " . fnameescape(a:file)
+    call OpenFileGeneric(a:file, 'v')
 endfunction
 
 function! OpenFileInWindowInDirectionH(file)
-    call s:open_file_in_direction(a:file, 'h')
+    call OpenFileGeneric(a:file, 'h')
 endfunction
 
 function! OpenFileInWindowInDirectionJ(file)
-    call s:open_file_in_direction(a:file, 'j')
+    call OpenFileGeneric(a:file, 'j')
 endfunction
 
 function! OpenFileInWindowInDirectionK(file)
-    call s:open_file_in_direction(a:file, 'k')
+    call OpenFileGeneric(a:file, 'k')
 endfunction
 
 function! OpenFileInWindowInDirectionL(file)
-    call s:open_file_in_direction(a:file, 'l')
+    call OpenFileGeneric(a:file, 'l')
 endfunction
 

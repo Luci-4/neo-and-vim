@@ -1,23 +1,5 @@
-function OpenFileAt(file, line, ...)
-    let l:col = a:0 ? a:1 : 1
-    if filereadable(a:file)
-        execute 'keepalt edit ' . fnameescape(a:file)
-    else
-        echo "File does not exist: " . a:file
-    endif
-    call cursor(a:line, l:col)
-endfunction
-
-
-function OpenFileVSplitRightAt(file, line, ...)
-    let l:col = a:0 ? a:1 : 1
-    if filereadable(a:file)
-        execute 'vsplit ' . fnameescape(a:file)
-    else
-        echo "File does not exist: " . a:file
-    endif
-    call cursor(a:line, l:col)
-endfunction
+let s:config_path = split(&runtimepath, ',')[0]
+execute 'source' s:config_path . '/files_utils.vim'
 
 function! ParseGrepLine(line)
     let m = matchlist(a:line, '\v^([^:]+):(\d+):(\d+):(.*)$')
@@ -42,88 +24,37 @@ function! ParseGrepLine(line)
     return {}
 endfunction
 
-function s:open_file_in_direction_at(file, line, col, direction)
-    if empty(a:file)
-        echo "No file under cursor"
-        return
-    endif
-
-    if !filereadable(a:file)
-        echo "File does not exist: " . a:file
-        return
-    endif
-
-    execute "wincmd " . a:direction
-    execute "edit " . fnameescape(a:file)
-
-    call cursor(a:line, a:col)
-endfunction
 
 
-function! OpenFileWhereString(found_string_line)
-    let l:parsed_line = ParseGrepLine(a:found_string_line)
+function! OpenFileFromGrepStringGeneric(grep_string_line, ...)
+    let l:parsed_line = ParseGrepLine(a:grep_string_line)
     if empty(l:parsed_line)
         echoerr "Couldn't parse " . a:found_string_line
         return
     endif
 
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call OpenFileAt(l:file, l:line, get(l:parsed_line, 'col', 1))
+    let l:direction = get(a:000, 0, '')   " '', 'v', 'h', etc.
+    call OpenFileGeneric(l:parsed_line.file, l:direction, l:parsed_line.line, get(l:parsed_line, 'col', 1))
 endfunction
 
-function! OpenFileWhereStringVSplitRight(found_string_line)
-    let l:parsed_line = ParseGrepLine(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call OpenFileVSplitRightAt(l:file, l:line, get(l:parsed_line, 'col', 1))
+
+function! OpenFileFromGrepStringVSplitRight(found_string_line)
+    call OpenFileFromGrepStringGeneric(a:found_string_line, 'v')
 endfunction
 
-function! OpenFileWhereStringInDirectionH(found_string_line)
-    let l:parsed_line = ParseGrepLine(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction_at(l:file, l:line, get(l:parsed_line, 'col', 1), 'h')
+function! OpenFileFromGrepStringInDirectionH(found_string_line)
+    call OpenFileFromGrepStringGeneric(a:found_string_line, 'h')
 endfunction
 
-function! OpenFileWhereStringInDirectionJ(found_string_line)
-    let l:parsed_line = ParseGrepLine(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction_at(l:file, l:line, get(l:parsed_line, 'col', 1), 'j')
+function! OpenFileFromGrepStringInDirectionJ(found_string_line)
+    call OpenFileFromGrepStringGeneric(a:found_string_line, 'j')
 endfunction
 
-function! OpenFileWhereStringInDirectionK(found_string_line)
-    let l:parsed_line = ParseGrepLine(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction_at(l:file, l:line, get(l:parsed_line, 'col', 1), 'k')
+function! OpenFileFromGrepStringInDirectionK(found_string_line)
+    call OpenFileFromGrepStringGeneric(a:found_string_line, 'k')
 endfunction
 
-function! OpenFileWhereStringInDirectionL(found_string_line)
-    let l:parsed_line = ParseGrepLine(a:found_string_line)
-    if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
-        return
-    endif
-    let l:file = l:parsed_line.file
-    let l:line = l:parsed_line.line
-    call s:open_file_in_direction_at(l:file, l:line, get(l:parsed_line, 'col', 1), 'l')
+function! OpenFileFromGrepStringInDirectionL(found_string_line)
+    call OpenFileFromGrepStringGeneric(a:found_string_line, 'l')
 endfunction
 

@@ -1,8 +1,8 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
 let s:log_file = s:config_path . "/log_char.txt"
-function! OpenSpecialListBuffer(list, action_map, filetype, vertical, wrap) abort
-
+function! OpenSpecialListBuffer(list, action_map, filetype, vertical, wrap, ...) abort
+    let l:format_callback = get(a:000, 0, '')
     if a:vertical == 1
         vertical enew
     else
@@ -21,12 +21,22 @@ function! OpenSpecialListBuffer(list, action_map, filetype, vertical, wrap) abor
     call setbufvar(l:new_buf, '&wrap', a:wrap)
 
     " call setline(1, a:list)
-    call setbufline(l:new_buf, 1, a:list)
+    if !empty(l:format_callback)
+        let l:formatted_list = map(copy(a:list), l:format_callback . '(v:val)')
+        call setbufvar(l:new_buf, 'raw_list', a:list)
+        call setbufvar(l:new_buf, 'special_list', l:formatted_list)
+        call setbufline(l:new_buf, 1, l:formatted_list)
+        for [key, func] in items(a:action_map)
+            execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getbufvar(' . l:new_buf . ', "raw_list")[line(".")-1])<CR>'
+        endfor
+    else
+        call setbufline(l:new_buf, 1, a:list)
+        for [key, func] in items(a:action_map)
+            execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))<CR>'
+        endfor
+    endif
     call setbufvar(l:new_buf, '&modifiable', 0)
 
-    for [key, func] in items(a:action_map)
-        execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))<CR>'
-    endfor
 endfunction
 
 

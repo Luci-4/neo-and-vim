@@ -3,6 +3,7 @@ let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/files_utils.vim'
 execute 'source' s:config_path . '/spectroscope/files_utils.vim'
 execute 'source' s:config_path . '/spectroscope/grep_utils.vim'
+execute 'source' s:config_path . '/spectroscope/diagnostics_utils.vim'
 
 function! MoveDown(...)
     normal! j
@@ -13,7 +14,7 @@ function! MoveUp(...)
 endfunction
 
 let g:spectroscope_files_binds = {
-            \'<CR>': 'OpenFile', 
+            \'<CR>': 'OpenFileGeneric', 
             \'<C-v>': 'OpenFileVSplitRight',
             \'H': 'OpenFileInWindowInDirectionH',
             \'J': 'OpenFileInWindowInDirectionJ',
@@ -34,19 +35,28 @@ let g:spectroscope_picker_binds_files_directions = {
             \ }
 
 let g:spectroscope_picker_binds_grep_directions = {
-            \'': 'OpenFileWhereString', 
-            \'v': 'OpenFileWhereStringVSplitRight',
-            \'h': 'OpenFileWhereStringInDirectionH',
-            \'j': 'OpenFileWhereStringInDirectionJ',
-            \'k': 'OpenFileWhereStringInDirectionK',
-            \'l': 'OpenFileWhereStringInDirectionL',
+            \'': 'OpenFileFromGrepStringGeneric', 
+            \'v': 'OpenFileFromGrepStringVSplitRight',
+            \'h': 'OpenFileFromGrepStringInDirectionH',
+            \'j': 'OpenFileFromGrepStringInDirectionJ',
+            \'k': 'OpenFileFromGrepStringInDirectionK',
+            \'l': 'OpenFileFromGrepStringInDirectionL',
             \ }
 
 let g:spectroscope_binds_reference_directions = {
-            \'<CR>': 'OpenFileWhereString', 
-            \'<CR>v': 'OpenFileWhereStringVSplitRight',
-            \'<CR>h': 'OpenFileWhereStringInDirectionH',
-            \'<CR>j': 'OpenFileWhereStringInDirectionJ',
-            \'<CR>k': 'OpenFileWhereStringInDirectionK',
-            \'<CR>l': 'OpenFileWhereStringInDirectionL',
+            \'<CR>': 'OpenFileFromGrepString', 
+            \'<C-v>': 'OpenFileFromGrepStringVSplitRight',
+            \'H': 'OpenFileFromGrepStringInDirectionH',
+            \'J': 'OpenFileFromGrepStringInDirectionJ',
+            \'K': 'OpenFileFromGrepStringInDirectionK',
+            \'L': 'OpenFileFromGrepStringInDirectionL',
+            \ }
+
+let g:spectroscope_binds_diagnostics_directions = {
+            \'<CR>': 'OpenFileFromDiagnosticGeneric', 
+            \'<C-v>': 'OpenFileFromDiagnosticVSplitRight',
+            \'H': 'OpenFileFromDiagnosticInDirectionH',
+            \'J': 'OpenFileFromDiagnosticInDirectionJ',
+            \'K': 'OpenFileFromDiagnosticInDirectionK',
+            \'L': 'OpenFileFromDiagnosticInDirectionL',
             \ }
