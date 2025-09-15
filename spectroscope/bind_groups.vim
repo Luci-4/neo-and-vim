@@ -14,11 +14,11 @@ endfunction
 
 let g:spectroscope_files_binds = {
             \'<CR>': 'OpenFile', 
-            \'<CR>v': 'OpenFileVSplitRight',
-            \'<CR>h': 'OpenFileInWindowInDirectionH',
-            \'<CR>j': 'OpenFileInWindowInDirectionJ',
-            \'<CR>k': 'OpenFileInWindowInDirectionK',
-            \'l<CR>': 'OpenFileInWindowInDirectionL',
+            \'<C-v><CR>': 'OpenFileVSplitRight',
+            \'<C-h><CR>': 'OpenFileInWindowInDirectionH',
+            \'<C-j><CR>': 'OpenFileInWindowInDirectionJ',
+            \'<C-k><CR>': 'OpenFileInWindowInDirectionK',
+            \'<C-l><CR>': 'OpenFileInWindowInDirectionL',
             \'<C-o>': 'OpenFileExternally',
             \ }
 

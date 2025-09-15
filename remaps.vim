@@ -10,8 +10,13 @@ let mapleader = "\<Space>"
 " nnoremap <Leader>gb :call ListBranches()<CR>
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 nnoremap <Leader>ff :call FindFiles()<CR>
+
+
 nnoremap <Leader>fs :call FindFilesWithFilter()<CR>
-nnoremap <Leader>fsh :call LastFileWithFilter()<CR>
+" nnoremap <Leader>fsh :call LastFileWithFilter()<CR>
+
+
+
 nnoremap <leader>/ :call FindStringWithFilter()<CR>
 nnoremap <leader>* :call FindStringWordUnderCursorWithFilter()<CR>
 " nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
