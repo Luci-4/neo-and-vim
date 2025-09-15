@@ -111,3 +111,4 @@ set belloff=all
 set backspace=indent,eol,start
 set completeopt=menu,menuone,noselect
 
+autocmd FileType cpp setlocal commentstring=//%s

@@ -3,6 +3,7 @@ execute 'source' s:config_path . '/spectroscope/files.vim'
 execute 'source' s:config_path . '/spectroscope/grep.vim'
 execute 'source' s:config_path . '/spectroscope/git.vim'
 execute 'source' s:config_path . '/spectroscope/messages.vim'
+execute 'source' s:config_path . '/comments.vim'
 
 let mapleader = "\<Space>"
 
@@ -60,3 +61,5 @@ tnoremap <Esc> <C-\><C-n>
 
 nnoremap <leader><CR> :execute 'terminal python ' . expand('%:p')<CR>
 
+nnoremap <C-/> :call ToggleComment()<CR>
+xnoremap <C-/> :call ToggleComment()<CR>
