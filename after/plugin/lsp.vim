@@ -638,6 +638,9 @@ function! LSPComplete() abort
 endfunction
 
 function! s:lsp_handle_completion(channel, msg) abort
+    if mode() !=# 'i'
+        return
+    endif
     if has_key(a:msg, 'error')
         echoerr a:msg.error.message
         return
@@ -741,40 +744,47 @@ function! s:lsp_token_type_to_hl(type, mods) abort
 endfunction
 
 function! s:lsp_handle_semantic_tokens(channel, msg) abort
-    if !has_key(a:msg, 'result') || !has_key(a:msg.result, 'data')
-        echom "No semantic tokens"
-        return
-    endif
+    " if !has_key(a:msg, 'result') || !has_key(a:msg.result, 'data')
+    "     echom "No semantic tokens"
+    "     return
+    " endif
 
-    if exists('w:lsp_match_ids')
-        for id in w:lsp_match_ids
-            call matchdelete(id)
-        endfor
-    endif
-    let w:lsp_match_ids = []
+    " " Clear previous syntax matches
+    " if exists('w:lsp_syntax_ids')
+    "     for id in w:lsp_syntax_ids
+    "         execute 'syntax clear' id
+    "     endfor
+    " endif
+    " let w:lsp_syntax_ids = []
 
-    let l:data = a:msg.result.data
-    let l:line = 0
-    let l:char = 0
+    " let l:data = a:msg.result.data
+    " let l:line = 0
+    " let l:char = 0
 
-    for i in range(0, len(l:data)-1, 5)
-        let l:deltaLine = l:data[i]
-        let l:deltaStart = l:data[i+1]
-        let l:length = l:data[i+2]
-        let l:tokenType = l:data[i+3]
-        let l:tokenMods = l:data[i+4]
+    " for i in range(0, len(l:data)-1, 5)
+    "     let l:deltaLine = l:data[i]
+    "     let l:deltaStart = l:data[i+1]
+    "     let l:length = l:data[i+2]
+    "     let l:tokenType = l:data[i+3]
+    "     let l:tokenMods = l:data[i+4]
 
-        let l:line += l:deltaLine
-        if l:deltaLine == 0
-            let l:char += l:deltaStart
-        else
-            let l:char = l:deltaStart
-        endif
+    "     let l:line += l:deltaLine
+    "     if l:deltaLine == 0
+    "         let l:char += l:deltaStart
+    "     else
+    "         let l:char = l:deltaStart
+    "     endif
 
-        let l:hlgroup = s:lsp_token_type_to_hl(l:tokenType, l:tokenMods)
-        let id = matchaddpos(l:hlgroup, [[l:line+1, l:char+1, l:length]], g:lsp_syntax_highlights_priority)
-        call add(w:lsp_match_ids, id)
-    endfor
+    "     let l:hlgroup = s:lsp_token_type_to_hl(l:tokenType, l:tokenMods)
+    "     let l:matchname = 'LspToken' . i
+
+    "     " Escape braces for Vim execute
+    "     let l:pattern = '\%' . (l:line+1) . 'l\%' . (l:char+1) . 'c.\{' . l:length . '\}'
+    "     execute 'syntax match ' . l:matchname . ' "' . l:pattern . '"'
+    "     execute 'highlight link ' . l:matchname . ' ' . l:hlgroup
+
+    "     call add(w:lsp_syntax_ids, l:matchname)
+    " endfor
 endfunction
 function! LSPRequestSemanticTokens() abort
     if !get(g:, 'lsp_syntax_highlights_enabled', 1)
@@ -930,7 +940,7 @@ if executable('clangd')
             execute 'autocmd TextChanged,TextChangedI ' . pat . ' call s:lsp_did_change()'
             execute 'autocmd BufEnter ' . pat . ' call s:render_cached_diagnostics()'
             execute 'autocmd BufEnter,CursorMoved,WinEnter,VimResized,TextChanged,TextChangedI '  . pat .  ' call UpdateStatuslineWithScope()'
-            execute 'autocmd BufReadPost ' . pat . ' call LSPRequestSemanticTokens()'
+            " execute 'autocmd BufReadPost ' . pat . ' call LSPRequestSemanticTokens()'
             execute 'autocmd TextChangedI,TextChangedP ' . pat . ' call s:DebouncedLSPComplete()'
         endfor
     augroup END
