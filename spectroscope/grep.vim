@@ -10,11 +10,12 @@ function! GrepFilterCallback(list, input)
     return GrepInCWDSystemBased(a:input)
 endfunction
 
+
 function! FindStringWithFilter()
-    call OpenSpecialListBufferPicker([], '', g:spectroscope_picker_binds_grep_directions, 'GrepFilterCallback',  'greplist', 0, 0)
+    call OpenSpecialListBufferPicker([], '', g:spectroscope_picker_binds_grep_directions, 'GrepFilterCallback',  'greplist', 0, 0, 0, {})
 endfunction
 
 function! FindStringWordUnderCursorWithFilter()
     let word_under_cursor = expand('<cword>')
-    call OpenSpecialListBufferPicker([], word_under_cursor, g:spectroscope_picker_binds_grep_directions, 'GrepFilterCallback',  'greplist', 0, 0)
+    call OpenSpecialListBufferPicker([], word_under_cursor, g:spectroscope_picker_binds_grep_directions, 'GrepFilterCallback',  'greplist', 0, 0, 0, {})
 endfunction

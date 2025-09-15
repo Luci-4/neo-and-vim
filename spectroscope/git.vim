@@ -3,7 +3,7 @@ execute 'source' s:config_path . '/spectroscope/spectroscope.vim'
 
 function! ListBranches()
   let l:branches = split(system('git branch --all'), "\n")
-  call OpenSpecialListBuffer(l:branches, {'<CR>': 'CheckoutBranch'}, 'branchlist', 1)
+  call OpenSpecialListBuffer(l:branches, {'<CR>': 'CheckoutBranch'}, 'branchlist', 1, 0)
 endfunction
 
 function! CheckoutBranch()
@@ -28,7 +28,7 @@ function! TrackedFilesWithStatus()
         \ })
     endfor
 
-    call OpenSpecialListBuffer(l:files, {}, "gitstatus", 1)
+    call OpenSpecialListBuffer(l:files, {}, "gitstatus", 1, 0)
 endfunction
 
 function! GitAddFile(file)

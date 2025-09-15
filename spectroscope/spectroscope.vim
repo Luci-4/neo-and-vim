@@ -1,9 +1,8 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
 let s:log_file = s:config_path . "/log_char.txt"
-function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...) abort
+function! OpenSpecialListBuffer(list, action_map, filetype, vertical, wrap) abort
 
-    let l:wrap = (a:0 >= 1 ? a:1 : 0)  " default = 0 (nowrap)
     if a:vertical == 1
         vertical enew
     else
@@ -19,7 +18,7 @@ function! OpenSpecialListBuffer(list, action_map, filetype, vertical, ...) abort
 
     call setbufvar(l:new_buf, '&cursorline', 1)
     highlight CursorLine ctermbg=LightGrey guibg=#555555 gui=NONE cterm=NONE
-    call setbufvar(l:new_buf, '&wrap', l:wrap)
+    call setbufvar(l:new_buf, '&wrap', a:wrap)
 
     " call setline(1, a:list)
     call setbufline(l:new_buf, 1, a:list)
@@ -150,7 +149,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
             let entering = 1
             break
         endif
-        if char == char2nr("\<")
+        if char == char2nr("\<") || char == char2nr("\<Esc>")
             let entering = 0
             break
         endif
@@ -175,8 +174,8 @@ function! RunPickerWhile(buf, input, list, filter_callback)
         let g:last_opened_picker[filetype]['list'] = filtered_list
     endif
 
-    if entering != 1
-        return
+    if entering == 0
+        return filtered_list
     endif
     while 1
         echo "Direction:"
@@ -203,7 +202,7 @@ endfunction
 
 
 
-function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, ...) abort
+function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, wrap, solidified_action_map) abort
     if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
         call SetupSpecialListBufferPicker()
     endif
@@ -229,7 +228,7 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         call setbufvar(l:new_buf, '&modifiable', 1)
         call deletebufline(l:new_buf, 1, '$')
         call setbufline(l:new_buf, 1, a:list)
-        call setbufvar(l:new_buf, '&wrap', (a:0 >= 1 ? a.wrap : 0))
+        call setbufvar(l:new_buf, '&wrap', a:wrap)
         call setbufvar(l:new_buf, '&cursorline', 1)
         call setbufvar(l:new_buf, '&modifiable', 0)
         call setbufvar(l:new_buf, 'list', a:list)
@@ -239,7 +238,11 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         execute l:win . 'wincmd w'
     endif
     redraw
-    let entering = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback)
+    let filtered_list = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback)
+    if empty(filtered_list)
+        return
+    endif
+    call OpenSpecialListBuffer(filtered_list, a:solidified_action_map, a:filetype, 0, a:wrap)
 endfunction
 
 

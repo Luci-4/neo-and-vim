@@ -564,7 +564,7 @@ function! s:lsp_handle_references(channel, msg) abort
             endif
             call add(l:formatted, l:file . ':' . l:line . ':' . l:col . ':' . l:text)
         endfor
-        call OpenSpecialListBuffer(l:formatted, g:spectroscope_binds_reference_directions, 'referenceslist', 1)
+        call OpenSpecialListBuffer(l:formatted, g:spectroscope_binds_reference_directions, 'referenceslist', 1, 0)
     else
         echom "No references found"
     endif

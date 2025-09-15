@@ -23,7 +23,7 @@ endfunction
 
 function! ListRecentFilesInBuffer()
     if !empty(g:recent_files)
-        call OpenSpecialListBuffer(g:recent_files, g:spectroscope_files_binds, 'recentfiles', 0)
+        call OpenSpecialListBuffer(g:recent_files, g:spectroscope_files_binds, 'recentfiles', 0, 0)
     endif
 endfunction
 
