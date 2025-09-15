@@ -39,7 +39,6 @@ function! FindFiles()
     let l:files = g:files_cached
 
     if empty(l:files)
-        echom "looking for them again"
         let l:files = FindFilesInCWDSystemBased()
     endif
 

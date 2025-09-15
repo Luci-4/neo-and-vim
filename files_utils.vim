@@ -1,4 +1,12 @@
 let s:config_path = split(&runtimepath, ',')[0]
+execute 'source' s:config_path . '/spectroscope/cached.vim'
+execute 'source' s:config_path . '/spectroscope/blacklist_args_cache.vim'
+
+function! GenerateFileCache() abort
+    let g:files_cached = FindFilesInCWDSystemBased()
+    let g:files_cached_shell_escaped = map(copy(g:files_cached), 'shellescape(v:val)')
+    echom 'Files cached: ' . len(g:files_cached)
+endfunction
 
 function! FindFilesInCWDSystemBased()
     let l:root = getcwd()
@@ -8,6 +16,9 @@ function! FindFilesInCWDSystemBased()
         return g:files_cached
     endif
 
+    if empty(g:blacklist_args_cached_for_tools)
+        call GenerateExclusionArgsForFiles()
+    endif
     if executable('fd')
         let l:cmd = 'fd . --type f --hidden --follow' .
                     \ g:blacklist_args_cached_for_tools['fd'] .

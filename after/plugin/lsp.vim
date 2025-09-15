@@ -1,3 +1,6 @@
+if has('nvim')
+  finish
+endif
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/system_check.vim'
 let g:lsp_file_patterns = ['*.c', '*.cpp', '*.cc', '*.h', '*.hpp']

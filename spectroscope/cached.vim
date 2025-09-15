@@ -20,3 +20,5 @@ function! ClearSpectroscopePickerCache(filename)
     let g:spectroscope_picker_previous_results[a:filename] = []
     let g:spectroscope_picker_all_previous_results[a:filename] = {}
 endfunction
+
+
