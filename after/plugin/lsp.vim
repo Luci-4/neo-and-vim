@@ -746,6 +746,13 @@ function! s:lsp_handle_semantic_tokens(channel, msg) abort
         return
     endif
 
+    if exists('w:lsp_match_ids')
+        for id in w:lsp_match_ids
+            call matchdelete(id)
+        endfor
+    endif
+    let w:lsp_match_ids = []
+
     let l:data = a:msg.result.data
     let l:line = 0
     let l:char = 0
@@ -765,7 +772,8 @@ function! s:lsp_handle_semantic_tokens(channel, msg) abort
         endif
 
         let l:hlgroup = s:lsp_token_type_to_hl(l:tokenType, l:tokenMods)
-        call matchaddpos(l:hlgroup, [[l:line+1, l:char+1, l:length]], g:lsp_syntax_highlights_priority)
+        let id = matchaddpos(l:hlgroup, [[l:line+1, l:char+1, l:length]], g:lsp_syntax_highlights_priority)
+        call add(w:lsp_match_ids, id)
     endfor
 endfunction
 function! LSPRequestSemanticTokens() abort
