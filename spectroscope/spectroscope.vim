@@ -61,20 +61,25 @@ function! s:update_input(input, char)
 endfunction
 
 
-let g:last_opened_picker = {}
-function! SetupSpecialListBufferPicker()
-    if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
+if !exists('g:last_opened_picker')
+    let g:last_opened_picker= {}
+endif
+if !exists('g:special_list_buffers')
+    let g:special_list_buffers = {}
+endif
+function! SetupSpecialListBufferPicker(filetype)
+    if !has_key(g:special_list_buffers, a:filetype) || !bufexists(g:special_list_buffers[a:filetype])
         let l:buf = bufadd('')  " empty name = unnamed buffer
         call setbufvar(l:buf, '&buftype', 'nofile')
         call setbufvar(l:buf, '&bufhidden', 'hide')
         call setbufvar(l:buf, '&swapfile', 0)
         call setbufvar(l:buf, '&modifiable', 1)
-        call setbufvar(l:buf, '&filetype', 'speciallist')
+        call setbufvar(l:buf, '&filetype', a:filetype)
         call setbufvar(l:buf, '&buflisted', 1)
         call setbufvar(l:buf, '&cursorline', 1)
         highlight CursorLine ctermbg=LightGrey guibg=#555555 gui=NONE cterm=NONE
         call setbufvar(l:buf, '&modifiable', 0)
-        let g:special_list_buf = l:buf
+        let g:special_list_buffers[a:filetype] = l:buf
     endif
 endfunction
 
@@ -226,11 +231,11 @@ endfunction
 
 function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, wrap, solidified_action_map) abort
 
-    if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
-        call SetupSpecialListBufferPicker()
+    if has_key(g:special_list_buffers, a:filetype) || !bufexists(g:special_list_buffers[a:filetype])
+        call SetupSpecialListBufferPicker(a:filetype)
     endif
 
-    let l:new_buf = g:special_list_buf
+    let l:new_buf = g:special_list_buffers[a:filetype]
 
     call setbufvar(l:new_buf, '&filetype', a:filetype)
     let l:win = bufwinnr(l:new_buf) 
