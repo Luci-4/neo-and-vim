@@ -1,3 +1,16 @@
+local clients = {}
+local function get_or_start_client(server_name, root_dir)
+  if clients[root_dir] then
+    return clients[root_dir]
+  end
+
+  local config = vim.lsp.config[server_name]
+  config.root_dir = root_dir
+
+  local client_id = vim.lsp.start_client(config)
+  clients[root_dir] = client_id
+  return client_id
+end
 
 vim.diagnostic.config({
   virtual_text = true,
@@ -18,7 +31,12 @@ vim.lsp.config('*', {
 
 
 local function get_scope_breadcrumbs(bufnr)
-  local params = vim.lsp.util.make_position_params()
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  local clients = vim.lsp.get_clients({bufnr = bufnr})
+  if not clients[1] then return end
+  local client = clients[1]
+
+  local params = vim.lsp.util.make_position_params(nil, client.offset_encoding)
   vim.lsp.buf_request(bufnr, "textDocument/documentSymbol", params, function(err, result, _, _)
     if err or not result or vim.tbl_isempty(result) then
       vim.g.breadcrumbs = "__"
@@ -58,6 +76,12 @@ local function get_scope_breadcrumbs(bufnr)
     vim.g.breadcrumbs = breadcrumbs
     vim.opt.statusline = "%f %y %{g:breadcrumbs} %=Ln:%l Col:%c"
   end)
+end
+
+
+local function update_breadcrumbs(bufnr)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+  get_scope_breadcrumbs(bufnr)
 end
 
 local function show_references()
@@ -262,8 +286,42 @@ vim.lsp.config['tsserver'] = {
   on_attach = on_attach,
 }
 
-for _, server in ipairs({ 'clangd', 'pyright', 'luals', 'vimls', 'tsserver' }) do
-  vim.lsp.enable(server)
+local function on_buf_enter()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
+
+  local server_map = {
+    c = "clangd",
+    cpp = "clangd",
+    python = "pyright",
+    lua = "luals",
+    vim = "vimls",
+    vimscript = "vimls",
+    javascript = "tsserver",
+    typescript = "tsserver",
+    javascriptreact = "tsserver",
+    typescriptreact = "tsserver",
+  }
+
+  local server = server_map[ft]
+  if not server then return end
+
+  local root_dir = vim.fn.getcwd()  -- optionally replace with smarter root detection
+  local client_id = get_or_start_client(server, root_dir)
+
+  vim.lsp.buf_attach_client(bufnr, client_id)
+
+    vim.api.nvim_create_augroup("BreadcrumbsUpdate", { clear = true })
+
+    -- Attach to CursorMoved and CursorMovedI
+    vim.api.nvim_create_autocmd({"CursorMoved", "CursorMovedI"}, {
+      group = "BreadcrumbsUpdate",
+      callback = function()
+        update_breadcrumbs()
+      end,
+    })
 end
+
+vim.api.nvim_create_autocmd("BufEnter", { callback = on_buf_enter })
 vim.opt.winborder = 'rounded'
 vim.o.completeopt = "menuone,noselect,noinsert"
