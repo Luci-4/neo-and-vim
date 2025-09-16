@@ -295,19 +295,19 @@ vim.lsp.config['pyright'] = {
   on_attach = on_attach,
 }
 
-vim.lsp.config['luals'] = {
-  cmd = { 'lua-language-server' },
-  filetypes = { 'lua' },
-  root_markers = { '.luarc.json', '.luarc.jsonc', '.git' },
-  settings = {
-    Lua = {
-      runtime = { version = 'LuaJIT' },
-      diagnostics = { globals = { 'vim' } },
-      workspace = { library = vim.api.nvim_get_runtime_file("", true) },
-    }
-  },
-  on_attach = on_attach,
-}
+--vim.lsp.config['luals'] = {
+--  cmd = { 'lua-language-server' },
+--  filetypes = { 'lua' },
+--  root_markers = { '.luarc.json', '.luarc.jsonc', '.git' },
+--  settings = {
+--    Lua = {
+--      runtime = { version = 'LuaJIT' },
+--      diagnostics = { globals = { 'vim' } },
+--      workspace = { library = vim.api.nvim_get_runtime_file("", true) },
+--    }
+--  },
+--  on_attach = on_attach,
+--}
 
 vim.lsp.config['vimls'] = {
   cmd = { 'vim-language-server', '--stdio' },
@@ -327,7 +327,7 @@ local server_map = {
   c = "clangd",
   cpp = "clangd",
   python = "pyright",
-  lua = "luals",
+--  lua = "luals",
   vim = "vimls",
   vimscript = "vimls",
   javascript = "tsserver",
