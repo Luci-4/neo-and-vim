@@ -15,3 +15,4 @@ endfunction
 autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
 autocmd VimEnter * call SetupSpecialListBufferPicker('filelist')
 autocmd VimEnter * call SetupSpecialListBufferPicker('greplist')
+command! CacheRefresh call GenerateFileCache()
