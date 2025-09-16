@@ -29,7 +29,7 @@ endfunction
 function! OpenFileFromGrepStringGeneric(grep_string_line, ...)
     let l:parsed_line = ParseGrepLine(a:grep_string_line)
     if empty(l:parsed_line)
-        echoerr "Couldn't parse " . a:found_string_line
+        echoerr "Couldn't parse " . a:grep_string_line
         return
     endif
 

@@ -1,7 +1,10 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
-let s:log_file = s:config_path . "/log_char.txt"
 function! OpenSpecialListBuffer(list, action_map, filetype, vertical, wrap, ...) abort
+    "if has('nvim')
+        "call v:lua.OpenSpecialListBuffer(a:list, a:action_map, a:filetype, a:vertical, a:wrap, get(a:000, 0, ''))
+        "return
+    "endif
     let l:format_callback = get(a:000, 0, '')
     if a:vertical == 1
         vertical enew
@@ -126,33 +129,44 @@ function! RunPickerWhile(buf, input, list, filter_callback)
         if l:is_empty
             continue
         endif
-
-        if IsOnLinux()
-            let l:ALT_KEY_LINUX = 27
-            if char == l:ALT_KEY_LINUX
-                let next = getchar()        
-                if next == char2nr('j')
-                    normal! j 
-                    redraw
-                endif
-                if next == char2nr('k')
-                    normal! k 
-                    redraw
-                endif
+        if has('nvim') 
+            if char ==# "\<M-j>"
+                normal! j
+                redraw
+                continue
+            elseif char ==# "\<M-k>"
+                normal! k
+                redraw
                 continue
             endif
         else
-            let l:ALT_KEY = 128
-            if char == char2nr('j') + l:ALT_KEY 
-                normal! j 
-                redraw
-                continue
-            endif
+            if IsOnLinux()
+                let l:ALT_KEY_LINUX = 27
+                if char == l:ALT_KEY_LINUX
+                    let next = getchar()        
+                    if next == char2nr('j')
+                        normal! j 
+                        redraw
+                    endif
+                    if next == char2nr('k')
+                        normal! k 
+                        redraw
+                    endif
+                    continue
+                endif
+            else
+                let l:ALT_KEY = 128
+                if char == char2nr('j') + l:ALT_KEY 
+                    normal! j 
+                    redraw
+                    continue
+                endif
 
-            if char == char2nr('k') + l:ALT_KEY 
-                normal! k 
-                redraw
-                continue
+                if char == char2nr('k') + l:ALT_KEY 
+                    normal! k 
+                    redraw
+                    continue
+                endif
             endif
         endif
         if char == char2nr("\<CR>")
@@ -213,6 +227,7 @@ endfunction
 
 
 function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, wrap, solidified_action_map) abort
+
     if !exists('g:special_list_buf') || !bufexists(g:special_list_buf)
         call SetupSpecialListBufferPicker()
     endif
@@ -278,4 +293,5 @@ function! s:do_filter(input, list, popup_id, max_lines)
     endif
     call popup_settext(l:popup_id, l:popup_lines)
 endfunction
+
 

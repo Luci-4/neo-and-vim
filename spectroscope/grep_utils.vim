@@ -1,6 +1,8 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/files_utils.vim'
 execute 'source' s:config_path . '/spectroscope/vimgrep_utils.vim'
+execute 'source' s:config_path . '/spectroscope/cached.vim'
+execute 'source' s:config_path . '/spectroscope/blacklist_args_cache.vim'
 
 
 let g:grep_spectroscope_file_type = 'greplist'
@@ -47,7 +49,7 @@ function! GrepInCWDSystemBased(needle) abort
     endif
 
     if executable('rg')
-        if l:use_black_list
+        if l:use_black_list == 1
             let l:cmd = 'rg --vimgrep --column --hidden --follow ' . g:blacklist_args_cached_for_tools['rg'] . ' ' . shellescape(l:needle) . ' ' . shellescape(l:root)
         else
             let l:cmd = "rg --vimgrep --column --hidden -- " . shellescape(a:needle) . ' ' . join(g:files_cached_shell_escaped, ' ')

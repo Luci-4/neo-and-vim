@@ -5,7 +5,6 @@ execute 'source' s:config_path . '/spectroscope/blacklist_args_cache.vim'
 function! GenerateFileCache() abort
     let g:files_cached = FindFilesInCWDSystemBased()
     let g:files_cached_shell_escaped = map(copy(g:files_cached), 'shellescape(v:val)')
-    echom 'Files cached: ' . len(g:files_cached)
 endfunction
 
 function! FindFilesInCWDSystemBased()

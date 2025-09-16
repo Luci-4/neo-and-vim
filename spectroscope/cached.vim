@@ -1,5 +1,10 @@
-let g:files_cached = []
-let g:blacklist_args_cached_for_tools = {}
+if !exists("g:files_cached")
+    let g:files_cached = []
+endif
+if !exists("g:blacklist_args_cached_for_tools")
+    let g:blacklist_args_cached_for_tools = {}
+endif
+
 
 let g:spectroscope_picker_previous_query = {} " strings
 let g:spectroscope_picker_previous_results = {} " lists

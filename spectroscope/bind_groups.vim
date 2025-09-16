@@ -44,7 +44,7 @@ let g:spectroscope_picker_binds_grep_directions = {
             \ }
 
 let g:spectroscope_binds_reference_directions = {
-            \'<CR>': 'OpenFileFromGrepString', 
+            \'<CR>': 'OpenFileFromGrepStringGeneric', 
             \'<C-v>': 'OpenFileFromGrepStringVSplitRight',
             \'H': 'OpenFileFromGrepStringInDirectionH',
             \'J': 'OpenFileFromGrepStringInDirectionJ',

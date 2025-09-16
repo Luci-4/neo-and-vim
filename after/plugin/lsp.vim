@@ -537,7 +537,10 @@ function! s:handle_msg(channel, msg) abort
         for d in l:diagnostics
             call ShowDiagnostic(l:bufnr, d)
         endfor
-        call setbufvar(l:bufnr, 'diagnostics', l:diagnostics) 
+        
+        call setbufvar(l:bufnr, 'diagnostics', map(l:diagnostics, {idx, val ->
+          \ {'sign': s:get_diagnostic_props_from_severity(val.severity).sign_text, 'msg': val.message, 'filename': val.filename, 'end_line': val.range.end.line + 1}
+          \ })) 
     endif
 endfunction
 
@@ -590,20 +593,6 @@ function! LSPGoToDefintion() abort
     call ch_sendexpr(g:lsp_job, l:msg, {'callback': function('s:lsp_handle_definition')})
 endfunction
 
-function! FormatDiagnosticForList(diag)
-    let l:filepath = a:diag.filename
-    let l:end_line  = a:diag.range.end.line + 1
-    let l:msg       = a:diag.message
-    let l:sev       = a:diag.severity
-
-    let l:diag_props = s:get_diagnostic_props_from_severity(l:sev)
-    let l:sign_text = l:diag_props.sign_text
-    let l:hl_group  = l:diag_props.hl_group 
-    let l:sign_name = l:diag_props.sign_name
-    let l:prop_type = l:diag_props.prop_type
-    let relpath = fnamemodify(l:filepath, ':.')
-    return l:sign_text . ' ' . l:msg . ' : ' . relpath . ':' . l:end_line  
-endfunction
 
 function! LSPDiagnosticsForBuffer()
     let l:current_bufnr = bufnr('%')
