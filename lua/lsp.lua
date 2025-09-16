@@ -117,52 +117,106 @@ local function custom_complete()
   vim.lsp.buf_request(0, "textDocument/completion", params, function(err, result, _, _)
     if err or not result then return end
     local items = result.items or result
+    if vim.tbl_isempty(items) then return end
+
+    local line = vim.api.nvim_get_current_line()
+    local col = vim.fn.col('.') - 1
+
+    -- find the start of the word before the cursor
+    local start_col = col
+    while start_col > 0 do
+      local c = line:sub(start_col, start_col)
+      if not c:match("[%w_]") then
+        break
+      end
+      start_col = start_col - 1
+    end
+    start_col = start_col + 1
+
     local completions = vim.tbl_map(function(item)
       return item.insertText or item.label
     end, items)
-    vim.fn.complete(vim.fn.col(".") - 1, completions)
+
+    vim.fn.complete(start_col, completions)
   end)
 end
+local function format_selection()
+  local start_pos = vim.api.nvim_buf_get_mark(0, "<") -- start of selection
+  local end_pos   = vim.api.nvim_buf_get_mark(0, ">") -- end of selection
 
+  vim.lsp.buf.format({
+    range = {
+      start = { line = start_pos[1] - 1, character = start_pos[2] },
+      ["end"] = { line = end_pos[1] - 1, character = end_pos[2] },
+    },
+    async = true,
+  })
+end
 
 local function buf_set_keymaps(bufnr)
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
   vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
   vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
-  vim.keymap.set('n', 'ge', vim.diagnostic.setloclist, opts)
-  vim.keymap.set('n', '<leader>ds', vim.lsp.buf.document_symbol, opts)
 
   vim.keymap.set('n', 'gr', show_references, opts)
   vim.keymap.set('n', '<leader>sc', function() get_scope_breadcrumbs(bufnr) end, opts)
   vim.keymap.set('n', '<leader>dd', show_diagnostics, opts)
-
+    vim.keymap.set('n', '<leader>fl', function()
+      vim.lsp.buf.format({ async = true })
+    end, { noremap = true, silent = true, buffer = bufnr })
+    vim.keymap.set('v', '<leader>fl', format_selection, { noremap = true, silent = true, buffer = bufnr })
   local function term(code) return vim.api.nvim_replace_termcodes(code, true, true, true) end
   vim.keymap.set('i', '<M-j>', function() return vim.fn.pumvisible() == 1 and term('<C-n>') or '<M-j>' end, { expr = true, buffer = bufnr })
   vim.keymap.set('i', '<M-k>', function() return vim.fn.pumvisible() == 1 and term('<C-p>') or '<M-k>' end, { expr = true, buffer = bufnr })
-  vim.keymap.set('i', '<Esc>j>', function() return vim.fn.pumvisible() == 1 and term('<C-n>') or '<M-j>' end, { expr = true, buffer = bufnr })
-  vim.keymap.set('i', '<Esc>k>', function() return vim.fn.pumvisible() == 1 and term('<C-p>') or '<M-k>' end, { expr = true, buffer = bufnr })
-  vim.keymap.set('i', '<Tab>', function() return vim.fn.pumvisible() == 1 and term('<C-y>') or '<Tab>' end, { expr = true, buffer = bufnr })
+
+    local function term(code)
+      return vim.api.nvim_replace_termcodes(code, true, true, true)
+    end
+    vim.keymap.set('i', '<M-j>', function() 
+      return vim.fn.pumvisible() == 1 and term('<C-n>') or term('<M-j>')
+    end, { expr = true })
+
+    vim.keymap.set('i', '<M-k>', function()
+      return vim.fn.pumvisible() == 1 and term('<C-p>') or term('<M-k>')
+    end, { expr = true })
+
+    vim.keymap.set('i', '<Tab>', function()
+      return vim.fn.pumvisible() == 1 and term('<C-y>') or '<Tab>'
+    end, { expr = true })
 
   vim.cmd [[highlight! link Pmenu Visual]]
   vim.cmd [[highlight link PmenuSel Search]]
-end
-
-local function setup_format_on_save(client, bufnr)
-  if client.supports_method('textDocument/formatting') and
-     not client.supports_method('textDocument/willSaveWaitUntil') then
-    vim.api.nvim_create_autocmd('BufWritePre', {
-      buffer = bufnr,
+    vim.api.nvim_create_autocmd("TextChangedI", {
+      pattern = "*",
       callback = function()
-        vim.lsp.buf.format({ bufnr = bufnr, id = client.id, timeout_ms = 1000 })
+        local col = vim.fn.col('.') - 1
+        if col == 0 then return end
+
+        local line = vim.api.nvim_get_current_line()
+
+        -- Get the current word under the cursor
+        local start_col = col
+        while start_col > 0 do
+          local c = line:sub(start_col, start_col)
+          if not c:match("[%w_]") then
+            break
+          end
+          start_col = start_col - 1
+        end
+        local current_word = line:sub(start_col + 1, col)
+
+        -- Only trigger if the current word is not empty and no popup menu is visible
+        if current_word ~= "" and vim.fn.pumvisible() == 0 then
+          custom_complete()
+        end
       end,
     })
-  end
 end
+
 
 local function on_attach(client, bufnr)
   buf_set_keymaps(bufnr)
-  setup_format_on_save(client, bufnr)
 end
 
 
@@ -211,3 +265,5 @@ vim.lsp.config['tsserver'] = {
 for _, server in ipairs({ 'clangd', 'pyright', 'luals', 'vimls', 'tsserver' }) do
   vim.lsp.enable(server)
 end
+vim.opt.winborder = 'rounded'
+vim.o.completeopt = "menuone,noselect,noinsert"

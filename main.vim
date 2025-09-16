@@ -6,6 +6,7 @@ execute 'source' s:config_path . '/custom_settings.vim'
 execute 'source' s:config_path . '/remaps.vim'
 execute 'source' s:config_path . '/markdown.vim'
 execute 'source' s:config_path . '/git.vim'
+execute 'source' s:config_path . '/lsp_utils.vim'
 lua require('lsp')
 function! SetStatusLine()
     set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
