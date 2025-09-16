@@ -7,14 +7,14 @@ execute 'source' s:config_path . '/comments.vim'
 
 let mapleader = "\<Space>"
 
-" nnoremap <Leader>fr :call ListRecentFilesInBuffer()<CR>
 " nnoremap <Leader>gb :call ListBranches()<CR>
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 nnoremap <Leader>ff :call FindFiles()<CR>
+nnoremap <Leader>fr :call ListRecentFilesInBuffer(1)<CR>
 
 
 nnoremap <Leader>fs :call FindFilesWithFilter()<CR>
-" nnoremap <Leader>fsh :call LastFileWithFilter()<CR>
+nnoremap <Leader>fh :call LastFilesWithFilter()<CR>
 
 
 

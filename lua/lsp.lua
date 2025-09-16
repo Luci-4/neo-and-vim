@@ -20,6 +20,15 @@ vim.diagnostic.config({
   severity_sort = true,
 })
 
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextWarn",  { fg = "#F18FB0", bg = "#271e28" })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextError", { fg = "#ac2958", bg = "#21131f" })
+vim.api.nvim_set_hl(0, "DiagnosticVirtualTextInfo",  { fg = "#849be0", bg = "#1d1f2d" })
+
+-- Signs (gutter icons)
+vim.api.nvim_set_hl(0, "DiagnosticSignWarn",  { fg = "#F18FB0", bg = "#271e28" })
+vim.api.nvim_set_hl(0, "DiagnosticSignError", { fg = "#ac2958", bg = "#21131f" })
+vim.api.nvim_set_hl(0, "DiagnosticSignInfo",  { fg = "#849be0", bg = "#1d1f2d" })
+
 vim.lsp.config('*', {
   capabilities = {
     textDocument = {
@@ -82,6 +91,31 @@ end
 local function update_breadcrumbs(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   get_scope_breadcrumbs(bufnr)
+end
+
+local function go_to_definition()
+  local params = vim.lsp.util.make_position_params()
+  vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result, _, _)
+    if err or not result or vim.tbl_isempty(result) then
+      vim.notify("No definition found", vim.log.levels.INFO)
+      return
+    end
+
+    local items = vim.lsp.util.locations_to_items(result, "utf-8")
+
+    if #items == 1 then
+      local loc = items[1]
+      vim.api.nvim_win_set_buf(0, vim.fn.bufnr(loc.filename))
+      vim.api.nvim_win_set_cursor(0, {loc.lnum, loc.col})
+    else
+      local formatted = vim.tbl_map(function(it)
+        local relpath = vim.fn.fnamemodify(it.filename, ":.")
+        return string.format("%s:%d:%d:%s", relpath, it.lnum, it.col, it.text or "")
+      end, items)
+
+      vim.fn.OpenSpecialListBuffer(formatted, vim.g.spectroscope_binds_reference_directions, "referenceslist", 1, 0)
+    end
+  end)
 end
 
 local function show_references()
@@ -180,17 +214,18 @@ end
 local function buf_set_keymaps(bufnr)
   local opts = { noremap = true, silent = true, buffer = bufnr }
 
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, opts)
+  vim.keymap.set('n', 'gd', go_to_definition, opts)
   vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
 
   vim.keymap.set('n', 'gr', show_references, opts)
   vim.keymap.set('n', '<leader>sc', function() get_scope_breadcrumbs(bufnr) end, opts)
   vim.keymap.set('n', '<leader>dd', show_diagnostics, opts)
-    vim.keymap.set('n', '<leader>fl', function()
-      vim.lsp.buf.format({ async = true })
-    end, { noremap = true, silent = true, buffer = bufnr })
+    vim.keymap.set('n', '<leader>fl', function() vim.lsp.buf.format({ async = true }) end, { noremap = true, silent = true, buffer = bufnr })
     vim.keymap.set('v', '<leader>fl', format_selection, { noremap = true, silent = true, buffer = bufnr })
-  local function term(code) return vim.api.nvim_replace_termcodes(code, true, true, true) end
+
+  local function term(code) 
+      return vim.api.nvim_replace_termcodes(code, true, true, true) 
+  end
   vim.keymap.set('i', '<M-j>', function() return vim.fn.pumvisible() == 1 and term('<C-n>') or '<M-j>' end, { expr = true, buffer = bufnr })
   vim.keymap.set('i', '<M-k>', function() return vim.fn.pumvisible() == 1 and term('<C-p>') or '<M-k>' end, { expr = true, buffer = bufnr })
 
@@ -243,11 +278,13 @@ local function on_attach(client, bufnr)
   buf_set_keymaps(bufnr)
 end
 
-
+local capabilities = vim.lsp.protocol.make_client_capabilities()
+capabilities.textDocument.completion.completionItem.snippetSupport = false
 vim.lsp.config['clangd'] = {
   cmd = { 'clangd', '--compile-commands-dir=build' },
-  filetypes = { 'c', 'cpp', 'objc', 'objcpp' },
+  filetypes = { 'c', 'cpp', 'objc', 'objcpp', 'cc', 'h', 'hpp'},
   root_markers = { '.clangd', 'compile_commands.json', '.git' },
+  capabilities = capabilities,
   on_attach = on_attach,
 }
 
@@ -286,42 +323,58 @@ vim.lsp.config['tsserver'] = {
   on_attach = on_attach,
 }
 
+local server_map = {
+  c = "clangd",
+  cpp = "clangd",
+  python = "pyright",
+  lua = "luals",
+  vim = "vimls",
+  vimscript = "vimls",
+  javascript = "tsserver",
+  typescript = "tsserver",
+  javascriptreact = "tsserver",
+  typescriptreact = "tsserver",
+}
+
+vim.opt.winborder = 'rounded'
+vim.o.completeopt = "menuone,noselect,noinsert"
+
+vim.api.nvim_create_augroup("BreadcrumbsUpdate", { clear = true })
+
+vim.api.nvim_create_autocmd({"CursorMoved", "CursorMovedI"}, {
+  group = "BreadcrumbsUpdate",
+  callback = function()
+    update_breadcrumbs()
+  end,
+})
+
+local lsp_clients = {}  
+
+local function get_or_start_client(server, root_dir)
+    lsp_clients[server] = lsp_clients[server] or {}
+
+    if lsp_clients[server][root_dir] then
+        return lsp_clients[server][root_dir]
+    end
+
+    local client_id = vim.lsp.start_client(vim.lsp.config[server])
+    lsp_clients[server][root_dir] = client_id
+    return client_id
+end
+
 local function on_buf_enter()
-  local bufnr = vim.api.nvim_get_current_buf()
-  local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
+    local bufnr = vim.api.nvim_get_current_buf()
+    local ft = vim.api.nvim_buf_get_option(bufnr, "filetype")
 
-  local server_map = {
-    c = "clangd",
-    cpp = "clangd",
-    python = "pyright",
-    lua = "luals",
-    vim = "vimls",
-    vimscript = "vimls",
-    javascript = "tsserver",
-    typescript = "tsserver",
-    javascriptreact = "tsserver",
-    typescriptreact = "tsserver",
-  }
+    local server = server_map[ft]
+    if not server then return end
 
-  local server = server_map[ft]
-  if not server then return end
+    local root_dir = vim.fn.getcwd()
+    local client_id = get_or_start_client(server, root_dir)
 
-  local root_dir = vim.fn.getcwd()  -- optionally replace with smarter root detection
-  local client_id = get_or_start_client(server, root_dir)
-
-  vim.lsp.buf_attach_client(bufnr, client_id)
-
-    vim.api.nvim_create_augroup("BreadcrumbsUpdate", { clear = true })
-
-    -- Attach to CursorMoved and CursorMovedI
-    vim.api.nvim_create_autocmd({"CursorMoved", "CursorMovedI"}, {
-      group = "BreadcrumbsUpdate",
-      callback = function()
-        update_breadcrumbs()
-      end,
-    })
+    if not vim.lsp.buf_is_attached(bufnr, client_id) then
+        vim.lsp.buf_attach_client(bufnr, client_id)
+    end
 end
 
 vim.api.nvim_create_autocmd("BufEnter", { callback = on_buf_enter })
-vim.opt.winborder = 'rounded'
-vim.o.completeopt = "menuone,noselect,noinsert"

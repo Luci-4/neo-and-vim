@@ -21,9 +21,9 @@ function! AddToRecentFiles(file)
     endif
 endfunction
 
-function! ListRecentFilesInBuffer()
+function! ListRecentFilesInBuffer(vertical)
     if !empty(g:recent_files)
-        call OpenSpecialListBuffer(g:recent_files, g:spectroscope_files_binds, 'recentfiles', 0, 0)
+        call OpenSpecialListBuffer(g:recent_files, g:spectroscope_files_binds, 'recentfiles', a:vertical, 0)
     endif
 endfunction
 

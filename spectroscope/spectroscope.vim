@@ -1,13 +1,10 @@
 let s:config_path = split(&runtimepath, ',')[0]
 
 function! OpenSpecialListBuffer(list, action_map, filetype, vertical, wrap, ...) abort
-    "if has('nvim')
-        "call v:lua.OpenSpecialListBuffer(a:list, a:action_map, a:filetype, a:vertical, a:wrap, get(a:000, 0, ''))
-        "return
-    "endif
     let l:format_callback = get(a:000, 0, '')
-    if a:vertical == 1
-        vertical enew
+    if a:vertical
+        vsplit
+        enew
     else
         enew
     endif
@@ -17,7 +14,7 @@ function! OpenSpecialListBuffer(list, action_map, filetype, vertical, wrap, ...)
     call setbufvar(l:new_buf, '&swapfile', 0)
     call setbufvar(l:new_buf, '&modifiable', 1)
     call setbufvar(l:new_buf, '&filetype', a:filetype)
-    call setbufvar(l:new_buf, '&buflisted', 0)
+    call setbufvar(l:new_buf, '&buflisted', 1)
 
     call setbufvar(l:new_buf, '&cursorline', 1)
     highlight CursorLine ctermbg=LightGrey guibg=#555555 gui=NONE cterm=NONE
@@ -73,7 +70,7 @@ function! SetupSpecialListBufferPicker()
         call setbufvar(l:buf, '&swapfile', 0)
         call setbufvar(l:buf, '&modifiable', 1)
         call setbufvar(l:buf, '&filetype', 'speciallist')
-        call setbufvar(l:buf, '&buflisted', 0)
+        call setbufvar(l:buf, '&buflisted', 1)
         call setbufvar(l:buf, '&cursorline', 1)
         highlight CursorLine ctermbg=LightGrey guibg=#555555 gui=NONE cterm=NONE
         call setbufvar(l:buf, '&modifiable', 0)
@@ -196,6 +193,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
         let g:last_opened_picker[filetype] = {}
         let g:last_opened_picker[filetype]['input'] = input
         let g:last_opened_picker[filetype]['list'] = filtered_list
+        let g:last_opened_picker[filetype]['cursor_line'] = line('.')
     endif
 
     if entering == 0
@@ -239,6 +237,10 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
     let l:buffer_not_opened_in_window = bufwinnr(l:new_buf) == -1
 
     let input = a:reopen == 1 ? get(get(g:last_opened_picker, a:filetype, {}), "input", '') : a:input
+    if a:reopen == 1
+      let lnum = get(get(g:last_opened_picker, a:filetype, {}), "cursor_line", 1)
+      call cursor(lnum, 1)
+    endif
     if l:buffer_not_opened_in_window
         if a:reopen == 0
             call ClearSpectroscopePickerCache(a:filetype)
@@ -258,6 +260,7 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         call setbufvar(l:new_buf, '&modifiable', 0)
         call setbufvar(l:new_buf, 'list', a:list)
         call setbufvar(l:new_buf, '&filetype', a:filetype)
+        call setbufvar(l:new_buf, '&buflisted', 1)
         call setbufvar(l:new_buf, 'direction_binds', a:direction_binds)
     else
         execute l:win . 'wincmd w'

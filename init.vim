@@ -1,2 +1,3 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/main.vim'    
+execute 'source' s:config_path . '/main.vim'    

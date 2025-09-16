@@ -50,7 +50,11 @@ set mouse=a
 " Set the default file encoding
 set encoding=utf-8
 set termguicolors
-colorscheme shado
+
+colorscheme rocket
+highlight DiagnosticWarn guifg=#d7ba5e
+highlight DiagnosticError guifg=#ac2958 guibg=#21131f
+highlight DiagnosticInfo  guifg=#849be0 guibg=#1d1f2d
 
 set laststatus=2
 " set statusline=%f\ %y\ %=Ln:%l\ Col:%c
@@ -96,7 +100,7 @@ set shortmess+=I
 augroup RecentFilesListOnStart
     autocmd!
     autocmd VimEnter * call InitRecentFiles()
-    autocmd VimEnter * if argc() == 0 | call ListRecentFilesInBuffer() | endif
+    autocmd VimEnter * if argc() == 0 | call ListRecentFilesInBuffer(0) | endif
 augroup END
 
 autocmd FileType python setlocal tabstop=4 shiftwidth=4

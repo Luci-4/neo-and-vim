@@ -62,7 +62,7 @@ function! FindFilesWithFilter()
     endif
 endfunction
 
-function! LastFileWithFilter()
+function! LastFilesWithFilter()
     let l:files = g:files_cached
     if empty(l:files)
         let l:files = FindFilesInCWDSystemBased()
