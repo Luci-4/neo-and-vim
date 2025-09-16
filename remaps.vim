@@ -64,3 +64,6 @@ nnoremap <leader><CR> :execute 'terminal python ' . expand('%:p')<CR>
 
 nnoremap <C-/> :call ToggleComment()<CR>
 xnoremap <C-/> :call ToggleComment()<CR>
+
+nnoremap <C-_> :call ToggleComment()<CR>
+xnoremap <C-_> :call ToggleComment()<CR>
