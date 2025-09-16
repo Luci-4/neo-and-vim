@@ -69,3 +69,5 @@ nnoremap <C-_> :call ToggleComment()<CR>
 xnoremap <C-_> :call ToggleComment()<CR>
 
 nnoremap <leader>s :%s/\<<C-r><C-w>\>/<C-r><C-w>/gc<Left><Left><Left>
+nnoremap <Leader>r <C-w>r
+nnoremap <Leader>R <C-w>R
