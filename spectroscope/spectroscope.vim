@@ -219,7 +219,6 @@ function! RunPickerWhile(buf, input, list, filter_callback)
         endif
 
         if has_key(direction_binds, char_direction)
-
             execute 'call ' . direction_binds[char_direction] . '(getline("."))'
             break
         endif
@@ -229,7 +228,8 @@ endfunction
 
 
 
-function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, wrap, solidified_action_map) abort
+function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, wrap, solidified_action_map, ...) abort
+    let l:format_callback = get(a:000, 0, '')
 
     if has_key(g:special_list_buffers, a:filetype) || !bufexists(g:special_list_buffers[a:filetype])
         call SetupSpecialListBufferPicker(a:filetype)
@@ -256,6 +256,10 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         call setbufvar(l:new_buf, '&modifiable', 1)
         call deletebufline(l:new_buf, 1, '$')
         call setbufline(l:new_buf, 1, a:list)
+
+        for [key, func] in items(a:solidified_action_map)
+            execute 'nnoremap <buffer> ' . key . ' :call ' . func . '(getline("."))<CR>'
+        endfor
         call setbufvar(l:new_buf, '&wrap', a:wrap)
         call setbufvar(l:new_buf, '&cursorline', 1)
         call setbufvar(l:new_buf, '&modifiable', 0)

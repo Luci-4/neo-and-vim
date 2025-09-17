@@ -34,6 +34,16 @@ let g:spectroscope_picker_binds_files_directions = {
             \'o': 'OpenFileExternally',
             \ }
 
+let g:spectroscope_grep_binds = {
+            \'<CR>': 'OpenFileFromGrepStringGeneric', 
+            \'<C-v>': 'OpenFileFromGrepStringVSplitRight',
+            \'H': 'OpenFileFromGrepStringInDirectionH',
+            \'J': 'OpenFileFromGrepStringInDirectionJ',
+            \'K': 'OpenFileFromGrepStringInDirectionK',
+            \'L': 'OpenFileFromGrepStringInDirectionL',
+            \ }
+
+
 let g:spectroscope_picker_binds_grep_directions = {
             \'': 'OpenFileFromGrepStringGeneric', 
             \'v': 'OpenFileFromGrepStringVSplitRight',
