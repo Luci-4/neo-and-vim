@@ -51,10 +51,15 @@ set mouse=a
 set encoding=utf-8
 set termguicolors
 
-colorscheme rocket
+if has('nvim')
+    colorscheme rocket
+else
+    colorscheme dogrun
+endif
 highlight DiagnosticWarn guifg=#d7ba5e
 highlight DiagnosticError guifg=#ac2958 guibg=#21131f
 highlight DiagnosticInfo  guifg=#849be0 guibg=#1d1f2d
+
 
 set laststatus=2
 " set statusline=%f\ %y\ %=Ln:%l\ Col:%c

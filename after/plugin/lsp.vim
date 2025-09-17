@@ -394,7 +394,7 @@ function! s:get_diagnostic_props_from_severity(sev) abort
     if a:sev == 1
         return {
                     \ 'sign_text': 'E',
-                    \ 'hl_group': 'Error',
+                    \ 'hl_group': 'DiagnosticError',
                     \ 'sign_name': 'LspDiagError',
                     \ 'prop_type': 'vim_lsp_virtual_text_error'
                     \ }
@@ -402,7 +402,7 @@ function! s:get_diagnostic_props_from_severity(sev) abort
     if a:sev == 2
         return {
                     \ 'sign_text': 'W',
-                    \ 'hl_group': 'WarnMsg',
+                    \ 'hl_group': 'DiagnosticWarn',
                     \ 'sign_name': 'LspDiagWarning',
                     \ 'prop_type': 'vim_lsp_virtual_text_warning'
                     \ }
@@ -425,19 +425,19 @@ endfunction
 
 if !exists('g:vim_lsp_virtual_text_type_defined')
     call prop_type_add('vim_lsp_virtual_text_error', {
-                \ 'highlight': 'Error',
+                \ 'highlight': 'DiagnosticError',
                 \ 'combine': 1,
                 \ 'priority': 10,
                 \ 'display': 'right_align'
                 \ })
     call prop_type_add('vim_lsp_virtual_text_warning', {
-                \ 'highlight': 'WarnMsg',
+                \ 'highlight': 'DiagnosticWarn',
                 \ 'combine': 1,
                 \ 'priority': 10,
                 \ 'display': 'right_align'
                 \ })
     call prop_type_add('vim_lsp_virtual_text_info', {
-                \ 'highlight': 'InfoMsg',
+                \ 'highlight': 'DiagnosticInfo',
                 \ 'combine': 1,
                 \ 'priority': 10,
                 \ 'display': 'right_align'
@@ -464,8 +464,8 @@ function! ShowDiagnostic(bufnr, diag) abort
     let l:prop_type = l:diag_props.prop_type
 
     if !exists('g:lsp_diag_signs_defined')
-        execute 'sign define LspDiagError   text=E texthl=Error'
-        execute 'sign define LspDiagWarning text=W texthl=WarnMsg'
+        execute 'sign define LspDiagError   text=E texthl=DiagnosticError'
+        execute 'sign define LspDiagWarning text=W texthl=DiagnosticWarn'
         execute 'sign define LspDiagInfo    text=I texthl=InfoMsg'
         let g:lsp_diag_signs_defined = 1
     endif

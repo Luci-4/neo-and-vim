@@ -7,7 +7,9 @@ execute 'source' s:config_path . '/remaps.vim'
 execute 'source' s:config_path . '/markdown.vim'
 execute 'source' s:config_path . '/git.vim'
 execute 'source' s:config_path . '/lsp_utils.vim'
-lua require('lsp')
+if has('nvim')
+    lua require('lsp')
+endif
 function! SetStatusLine()
     set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
 endfunction
