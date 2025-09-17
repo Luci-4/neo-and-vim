@@ -54,7 +54,7 @@ set termguicolors
 if has('nvim')
     colorscheme rocket
 else
-    colorscheme dogrun
+    colorscheme shado
 endif
 highlight DiagnosticWarn guifg=#d7ba5e
 highlight DiagnosticError guifg=#ac2958 guibg=#21131f
