@@ -1,6 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/files_utils.vim'
-call GenerateFileCache()
+call GenerateFileCache(0)
 execute 'source' s:config_path . '/settings.vim'
 execute 'source' s:config_path . '/custom_settings.vim'
 execute 'source' s:config_path . '/remaps.vim'
@@ -17,4 +17,4 @@ endfunction
 autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
 autocmd VimEnter * call SetupSpecialListBufferPicker('filelist')
 autocmd VimEnter * call SetupSpecialListBufferPicker('greplist')
-command! CacheRefresh call GenerateFileCache()
+command! CacheRefresh call GenerateFileCache(1)

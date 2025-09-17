@@ -7,13 +7,14 @@ let g:recent_files = []
 function! InitRecentFiles()
     let g:recent_files = []
     for file in v:oldfiles
-        let l:relpath = fnamemodify(file, ':.')
-        if l:relpath !=# file
-            call add(g:recent_files, l:relpath)
+        if filereadable(file)
+            let l:relpath = fnamemodify(file, ':.')
+            if l:relpath !=# file
+                call add(g:recent_files, l:relpath)
+            endif
         endif
     endfor
 endfunction
-
 function! AddToRecentFiles(file)
     let l:relpath = fnamemodify(a:file, ':.')
     if index(g:recent_files, l:relpath) == -1
