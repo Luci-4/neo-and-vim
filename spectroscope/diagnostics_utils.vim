@@ -27,10 +27,6 @@ function! OpenFileFromDiagnosticInDirectionL(diagnostic)
     call OpenFileFromDiagnosticGeneric(a:diagnostic, 'l')
 endfunction
 
-function! FormatDiagnosticForList(diag) 
-    if type(diag) == type({})
-    else
-endfunction
 
 function! FormatDiagnosticForList(diag)
         return a:diag.sign . ' ' . a:diag.msg . ' : ' . a:diag.filename . ':' . a:diag.end_line

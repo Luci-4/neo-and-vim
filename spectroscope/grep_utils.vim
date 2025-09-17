@@ -54,7 +54,9 @@ function! GrepInCWDSystemBased(needle) abort
         else
             let l:cmd = "rg --vimgrep --column --hidden -- " . shellescape(a:needle) . ' ' . join(g:files_cached_shell_escaped, ' ')
         endif
-        let l:results = split(system(l:cmd), "\n")
+        let l:sys_output = system(l:cmd)
+        
+        let l:results = split(substitute(l:sys_output, '\s\+', ' ', 'g'), "\n")
 
     elseif IsOnLinux() && executable('grep')
         if l:use_black_list
@@ -68,7 +70,7 @@ function! GrepInCWDSystemBased(needle) abort
         if type(l:sys_output) == type([])
             let l:results = l:sys_output
         elseif type(l:sys_output) == type('')
-            let l:results = split(l:sys_output, '\n')
+            let l:results = split(substitute(l:sys_output, '\s\+', ' ', 'g'), '\n')
         else
             let l:results = []
         endif
@@ -83,8 +85,8 @@ function! GrepInCWDSystemBased(needle) abort
         execute 'vimgrep /' . pattern . '/j ' . file_list
 
         for item in getqflist()
-            " Construct the standard format string
-            let entry = printf('%s:%d:%d:%s', item.bufname, item.lnum, item.col, item.text)
+
+            let entry = printf('%s:%d:%d:%s', item.bufname, item.lnum, item.col, substitute(item.text, '\s\+', ' ', 'g'))
             call add(l:results, entry)
         endfor
     endif

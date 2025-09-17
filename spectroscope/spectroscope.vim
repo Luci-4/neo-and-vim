@@ -83,7 +83,7 @@ function! SetupSpecialListBufferPicker(filetype)
     endif
 endfunction
 
-function! s:update_results(input, filtered_list, bufnr)
+function! s:update_results(input, filtered_list, bufnr, pattern_callback)
     let input = a:input
     let filtered_list = a:filtered_list
     let l:new_buf = a:bufnr
@@ -98,15 +98,17 @@ function! s:update_results(input, filtered_list, bufnr)
         call setbufvar(l:new_buf, 'match_id', -1)
     endif
     if !empty(input)
-        let pattern = '\v(:\d+:)?\d+:' . '\zs' . escape(input, '\')
-        call setbufvar(l:new_buf, 'match_id', matchadd('Search', pattern))
+        let pattern = call(a:pattern_callback, [input])
+        let new_match_id = matchadd('Search', pattern, 100)
+
+        call setbufvar(l:new_buf, 'match_id', new_match_id)
     endif
     redraw
 endfunction
 
-function! RunPickerWhile(buf, input, list, filter_callback)
+function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback)
 
-    call clearmatches()
+"    call clearmatches()
     let l:new_buf = a:buf 
     call setbufvar(l:new_buf, 'match_id', -1)
     let input = a:input
@@ -121,7 +123,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
     let entering = 0
     if !empty(input)
         let filtered_list = call(a:filter_callback, [list, input]) 
-        call s:update_results(input, filtered_list, l:new_buf)
+        call s:update_results(input, filtered_list, l:new_buf, a:pattern_callback)
     endif
 
     echo input
@@ -187,7 +189,7 @@ function! RunPickerWhile(buf, input, list, filter_callback)
         else
             let filtered_list = call(a:filter_callback, [list, input]) 
         endif
-        call s:update_results(input, filtered_list, l:new_buf)
+        call s:update_results(input, filtered_list, l:new_buf, a:pattern_callback)
         echo input
     endwhile
     call setbufvar(l:new_buf, 'input', input)
@@ -228,8 +230,13 @@ endfunction
 
 
 
+function! DefaultPatternCallback(input) 
+    return escape(a:input, '/')
+endfunction
+
 function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callback, filetype, vertical, reopen, wrap, solidified_action_map, ...) abort
     let l:format_callback = get(a:000, 0, '')
+    let l:pattern_callback = get(a:000, 1, 'DefaultPatternCallback')
 
     if has_key(g:special_list_buffers, a:filetype) || !bufexists(g:special_list_buffers[a:filetype])
         call SetupSpecialListBufferPicker(a:filetype)
@@ -271,7 +278,8 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         execute l:win . 'wincmd w'
     endif
     redraw
-    let filtered_list = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback)
+    
+    let filtered_list = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback, l:pattern_callback)
     if empty(filtered_list)
         return
     endif
