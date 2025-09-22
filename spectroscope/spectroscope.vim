@@ -67,6 +67,10 @@ endif
 if !exists('g:special_list_buffers')
     let g:special_list_buffers = {}
 endif
+
+if !exists('g:match_ids')
+    let g:match_ids = {}
+endif
 function! SetupSpecialListBufferPicker(filetype)
     if !has_key(g:special_list_buffers, a:filetype) || !bufexists(g:special_list_buffers[a:filetype])
         let l:buf = bufadd('')  " empty name = unnamed buffer
@@ -80,14 +84,15 @@ function! SetupSpecialListBufferPicker(filetype)
         highlight CursorLine ctermbg=LightGrey guibg=#555555 gui=NONE cterm=NONE
         call setbufvar(l:buf, '&modifiable', 0)
         let g:special_list_buffers[a:filetype] = l:buf
+        let g:match_ids[a:filetype] = -1
     endif
 endfunction
 
-function! s:update_results(input, filtered_list, bufnr, pattern_callback)
+function! s:update_results(input, filtered_list, bufnr, pattern_callback, filetype)
     let input = a:input
     let filtered_list = a:filtered_list
     let l:new_buf = a:bufnr
-    let match_id = getbufvar(l:new_buf, 'match_id')
+    let match_id = get(g:match_ids, a:filetype, -1)
 
     call setbufvar(l:new_buf, '&modifiable', 1)
     call deletebufline(l:new_buf, 1, '$')
@@ -95,22 +100,29 @@ function! s:update_results(input, filtered_list, bufnr, pattern_callback)
     call setbufvar(l:new_buf, '&modifiable', 0)
     if match_id != -1
         call matchdelete(match_id)
-        call setbufvar(l:new_buf, 'match_id', -1)
+        let g:match_ids[a:filetype] = -1
     endif
     if !empty(input)
         let pattern = call(a:pattern_callback, [input])
         let new_match_id = matchadd('Search', pattern, 100)
-
-        call setbufvar(l:new_buf, 'match_id', new_match_id)
+        let g:match_ids[a:filetype] = new_match_id
     endif
     redraw
 endfunction
 
-function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback)
+function! CleanSearchHighlights(pickerbufnr, filetype) abort
+    let match_id = get(g:match_ids, a:filetype, -1)
+    if match_id != -1
+        call matchdelete(match_id)
+        let g:match_ids[a:filetype] = -1
+    endif
+endfunction
+
+function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback, filetype)
 
 "    call clearmatches()
     let l:new_buf = a:buf 
-    call setbufvar(l:new_buf, 'match_id', -1)
+    let g:match_ids[a:filetype] = -1
     let input = a:input
     if empty(input)
         let input = getbufvar(l:new_buf, 'input')
@@ -123,7 +135,7 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback)
     let entering = 0
     if !empty(input)
         let filtered_list = call(a:filter_callback, [list, input]) 
-        call s:update_results(input, filtered_list, l:new_buf, a:pattern_callback)
+        call s:update_results(input, filtered_list, l:new_buf, a:pattern_callback, a:filetype)
     endif
 
     echo input
@@ -189,9 +201,11 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback)
         else
             let filtered_list = call(a:filter_callback, [list, input]) 
         endif
-        call s:update_results(input, filtered_list, l:new_buf, a:pattern_callback)
+        call s:update_results(input, filtered_list, l:new_buf, a:pattern_callback, a:filetype)
         echo input
     endwhile
+
+
     call setbufvar(l:new_buf, 'input', input)
 
     let direction_binds = getbufvar(l:new_buf, 'direction_binds')
@@ -203,6 +217,8 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback)
         let g:last_opened_picker[filetype]['cursor_line'] = line('.')
     endif
 
+
+    call CleanSearchHighlights(l:new_buf, filetype)
     if entering == 0
         return filtered_list
     endif
@@ -221,11 +237,23 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback)
         endif
 
         if has_key(direction_binds, char_direction)
+
+            let l:picker_win = bufwinnr(l:new_buf)
+            let l:picker_buf = l:new_buf
+
             execute 'call ' . direction_binds[char_direction] . '(getline("."))'
+
+            let l:opened_buf = bufnr('%') 
+            let l:current_win = winnr()
+            
+            if l:current_win == l:picker_win
+                call CleanSearchHighlights(l:picker_buf, a:filetype)
+            endif
             break
         endif
         echo "invalid: " . nr2char(direction)
     endwhile
+    return []
 endfunction
 
 
@@ -238,9 +266,7 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
     let l:format_callback = get(a:000, 0, '')
     let l:pattern_callback = get(a:000, 1, 'DefaultPatternCallback')
 
-    if has_key(g:special_list_buffers, a:filetype) || !bufexists(g:special_list_buffers[a:filetype])
-        call SetupSpecialListBufferPicker(a:filetype)
-    endif
+    call SetupSpecialListBufferPicker(a:filetype)
 
     let l:new_buf = g:special_list_buffers[a:filetype]
 
@@ -279,8 +305,21 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
     endif
     redraw
     
-    let filtered_list = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback, l:pattern_callback)
+
+    let l:picker_win = bufwinnr(l:new_buf)
+    let l:picker_buf = l:new_buf
+
+    
+
+    let filtered_list = RunPickerWhile(l:new_buf, input, a:list, a:filter_callback, l:pattern_callback, a:filetype)
+
     if empty(filtered_list)
+        let l:opened_buf = bufnr('%') 
+        let l:current_win = winnr()
+
+        if l:current_win == l:picker_win
+            call CleanSearchHighlights(l:picker_buf, a:filetype)
+        endif
         return
     endif
     call OpenSpecialListBuffer(filtered_list, a:solidified_action_map, a:filetype, 0, a:wrap)

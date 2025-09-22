@@ -1,3 +1,6 @@
+let s:config_path = split(&runtimepath, ',')[0]
+execute 'source' s:config_path . '/markdown.vim'
+
 for color_name in keys(g:colors)
     let color_value = g:colors[color_name]
     let syntaxName = 'md' . color_name . 'Text'

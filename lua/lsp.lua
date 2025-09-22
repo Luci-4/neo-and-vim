@@ -170,6 +170,9 @@ end
 
 
 local function custom_complete()
+  if vim.api.nvim_get_mode().mode ~= "i" then
+    return
+  end
   local params = vim.lsp.util.make_position_params()
   vim.lsp.buf_request(0, "textDocument/completion", params, function(err, result, _, _)
     if err or not result then return end
