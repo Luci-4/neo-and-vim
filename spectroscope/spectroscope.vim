@@ -133,6 +133,7 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback, fi
     endif
 
     let entering = 0
+    let filtered_list = []
     if !empty(input)
         let filtered_list = call(a:filter_callback, [list, input]) 
         call s:update_results(input, filtered_list, l:new_buf, a:pattern_callback, a:filetype)
@@ -211,14 +212,14 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback, fi
     let direction_binds = getbufvar(l:new_buf, 'direction_binds')
     if !empty(input)
         let filetype = getbufvar(l:new_buf, '&filetype')
-        let g:last_opened_picker[filetype] = {}
-        let g:last_opened_picker[filetype]['input'] = input
-        let g:last_opened_picker[filetype]['list'] = filtered_list
-        let g:last_opened_picker[filetype]['cursor_line'] = line('.')
+        let g:last_opened_picker[a:filetype] = {}
+        let g:last_opened_picker[a:filetype]['input'] = input
+        let g:last_opened_picker[a:filetype]['list'] = filtered_list
+        let g:last_opened_picker[a:filetype]['cursor_line'] = line('.')
     endif
 
 
-    call CleanSearchHighlights(l:new_buf, filetype)
+    call CleanSearchHighlights(l:new_buf, a:filetype)
     if entering == 0
         return filtered_list
     endif

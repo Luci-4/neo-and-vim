@@ -1,7 +1,6 @@
 let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/spectroscope/files.vim'
 execute 'source' s:config_path . '/spectroscope/grep.vim'
-execute 'source' s:config_path . '/spectroscope/git.vim'
 execute 'source' s:config_path . '/spectroscope/messages.vim'
 execute 'source' s:config_path . '/comments.vim'
 

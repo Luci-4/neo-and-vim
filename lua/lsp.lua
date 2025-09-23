@@ -1,16 +1,4 @@
 local clients = {}
-local function get_or_start_client(server_name, root_dir)
-    if clients[root_dir] then
-        return clients[root_dir]
-    end
-
-    local config = vim.lsp.config[server_name]
-    config.root_dir = root_dir
-
-    local client_id = vim.lsp.start_client(config)
-    clients[root_dir] = client_id
-    return client_id
-end
 
 vim.diagnostic.config({
     virtual_text = true,
@@ -367,6 +355,9 @@ local function on_buf_enter()
 
     local server = server_map[ft]
     if not server then return end
+    if vim.fn.executable(server) ~= 1 then
+        return
+    end    
 
     local root_dir = vim.fn.getcwd()
     local client_id = get_or_start_client(server, root_dir)

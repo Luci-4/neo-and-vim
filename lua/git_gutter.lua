@@ -50,6 +50,9 @@ local function place_git_signs()
 end
 
 function M.setup()
+    if vim.g.has_repo ~= 1 then
+        return
+    end
     vim.api.nvim_create_autocmd({'BufWritePost', 'BufReadPost'}, {
         callback = function()
             place_git_signs()

@@ -5,7 +5,11 @@ execute 'source' s:config_path . '/settings.vim'
 execute 'source' s:config_path . '/custom_settings.vim'
 execute 'source' s:config_path . '/remaps.vim'
 execute 'source' s:config_path . '/markdown.vim'
-execute 'source' s:config_path . '/git.vim'
+
+if !has('nvim')
+    execute 'source' s:config_path . '/git.vim'
+endif
+
 execute 'source' s:config_path . '/lsp_utils.vim'
 if has('nvim')
     lua require('lsp')

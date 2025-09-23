@@ -72,7 +72,6 @@ function! PlaceGitHighlights() abort
 endfunction
 
 call SetGitHighlights()
-
 augroup git_highlight
     autocmd!
     autocmd BufEnter,BufWritePost,TextChanged,TextChangedI * call PlaceGitHighlights()
