@@ -2,7 +2,10 @@ let s:config_path = split(&runtimepath, ',')[0]
 execute 'source' s:config_path . '/spectroscope/files.vim'
 execute 'source' s:config_path . '/spectroscope/grep.vim'
 execute 'source' s:config_path . '/spectroscope/messages.vim'
+execute 'source' s:config_path . '/spectroscope/commands.vim'
+execute 'source' s:config_path . '/spectroscope/terminal.vim'
 execute 'source' s:config_path . '/comments.vim'
+execute 'source' s:config_path . '/terminal.vim'
 
 let mapleader = "\<Space>"
 
@@ -21,6 +24,15 @@ nnoremap <leader>/ :call FindStringWithFilter()<CR>
 nnoremap <leader>* :call FindStringWordUnderCursorWithFilter()<CR>
 
 " nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
+
+nnoremap <Leader>ct :call ListTermCommands()<CR>
+
+nnoremap <leader>to :call OpenNewTerminal()<CR>
+nnoremap <leader>tt :call ToggleLastTerminal()<CR>
+nnoremap <leader>tp :call PrevTerminal()<CR>
+nnoremap <leader>tn :call NextTerminal()<CR>
+nnoremap <leader>tl :call ListTerminals()<CR>
+
 
 nnoremap <leader><leader> <c-^>
 

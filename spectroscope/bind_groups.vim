@@ -4,6 +4,8 @@ execute 'source' s:config_path . '/files_utils.vim'
 execute 'source' s:config_path . '/spectroscope/files_utils.vim'
 execute 'source' s:config_path . '/spectroscope/grep_utils.vim'
 execute 'source' s:config_path . '/spectroscope/diagnostics_utils.vim'
+execute 'source' s:config_path . '/commands.vim'
+execute 'source' s:config_path . '/terminal.vim'
 
 function! MoveDown(...)
     normal! j
@@ -69,4 +71,12 @@ let g:spectroscope_binds_diagnostics_directions = {
             \'J': 'OpenFileFromDiagnosticInDirectionJ',
             \'K': 'OpenFileFromDiagnosticInDirectionK',
             \'L': 'OpenFileFromDiagnosticInDirectionL',
+            \ }
+
+let g:spectroscope_term_commands_binds = {
+            \'<CR>': 'RunTermCommand', 
+            \ }
+
+let g:spectroscope_terminal_binds = {
+            \'<CR>': 'OpenTerminal', 
             \ }
