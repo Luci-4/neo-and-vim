@@ -562,7 +562,7 @@ function! s:lsp_handle_references(channel, msg) abort
             endif
             call add(l:formatted, l:file . ':' . l:line . ':' . l:col . ':' . l:text)
         endfor
-        call OpenSpecialListBuffer(l:formatted, g:spectroscope_binds_reference_directions, 'referenceslist', 1, 0)
+        call OpenSpecialListBuffer(l:formatted, g:spectroscope_references_binds, 'referenceslist', 1, 0)
     else
         echom "No references found"
     endif
@@ -586,7 +586,7 @@ endfunction
 function! LSPDiagnosticsForBuffer()
     let l:current_bufnr = bufnr('%')
     let l:old_diags = getbufvar(l:current_bufnr, "diagnostics", []) 
-    call OpenSpecialListBuffer(l:old_diags, g:spectroscope_binds_diagnostics_directions, 'diagnosticslist', 1, 0, 'FormatDiagnosticForList')
+    call OpenSpecialListBuffer(l:old_diags, g:spectroscope_diagnostics_binds, 'diagnosticslist', 1, 0, 'FormatDiagnosticForList')
 endfunction
 
 function! LSPReferences() abort

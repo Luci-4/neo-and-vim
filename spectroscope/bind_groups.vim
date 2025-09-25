@@ -18,59 +18,38 @@ endfunction
 let g:spectroscope_files_binds = {
             \'<CR>': 'OpenFileGeneric', 
             \'<C-v>': 'OpenFileVSplitRight',
-            \'H': 'OpenFileInWindowInDirectionH',
-            \'J': 'OpenFileInWindowInDirectionJ',
-            \'K': 'OpenFileInWindowInDirectionK',
-            \'L': 'OpenFileInWindowInDirectionL',
+            \'<C-h>': 'OpenFileInWindowInDirectionH',
+            \'<C-j>': 'OpenFileInWindowInDirectionJ',
+            \'<C-k>': 'OpenFileInWindowInDirectionK',
+            \'<C-l>': 'OpenFileInWindowInDirectionL',
             \'<C-o>': 'OpenFileExternally',
-            \ }
-
-
-let g:spectroscope_picker_binds_files_directions = {
-            \'': 'OpenFile', 
-            \'v': 'OpenFileVSplitRight',
-            \'h': 'OpenFileInWindowInDirectionH',
-            \'j': 'OpenFileInWindowInDirectionJ',
-            \'k': 'OpenFileInWindowInDirectionK',
-            \'l': 'OpenFileInWindowInDirectionL',
-            \'o': 'OpenFileExternally',
             \ }
 
 let g:spectroscope_grep_binds = {
             \'<CR>': 'OpenFileFromGrepStringGeneric', 
             \'<C-v>': 'OpenFileFromGrepStringVSplitRight',
-            \'H': 'OpenFileFromGrepStringInDirectionH',
-            \'J': 'OpenFileFromGrepStringInDirectionJ',
-            \'K': 'OpenFileFromGrepStringInDirectionK',
-            \'L': 'OpenFileFromGrepStringInDirectionL',
+            \'<C-h>': 'OpenFileFromGrepStringInDirectionH',
+            \'<C-j>': 'OpenFileFromGrepStringInDirectionJ',
+            \'<C-k>': 'OpenFileFromGrepStringInDirectionK',
+            \'<C-l>': 'OpenFileFromGrepStringInDirectionL',
             \ }
 
-
-let g:spectroscope_picker_binds_grep_directions = {
-            \'': 'OpenFileFromGrepStringGeneric', 
-            \'v': 'OpenFileFromGrepStringVSplitRight',
-            \'h': 'OpenFileFromGrepStringInDirectionH',
-            \'j': 'OpenFileFromGrepStringInDirectionJ',
-            \'k': 'OpenFileFromGrepStringInDirectionK',
-            \'l': 'OpenFileFromGrepStringInDirectionL',
-            \ }
-
-let g:spectroscope_binds_reference_directions = {
+let g:spectroscope_references_binds = {
             \'<CR>': 'OpenFileFromGrepStringGeneric', 
             \'<C-v>': 'OpenFileFromGrepStringVSplitRight',
-            \'H': 'OpenFileFromGrepStringInDirectionH',
-            \'J': 'OpenFileFromGrepStringInDirectionJ',
-            \'K': 'OpenFileFromGrepStringInDirectionK',
-            \'L': 'OpenFileFromGrepStringInDirectionL',
+            \'<C-h>': 'OpenFileFromGrepStringInDirectionH',
+            \'<C-j>': 'OpenFileFromGrepStringInDirectionJ',
+            \'<C-k>': 'OpenFileFromGrepStringInDirectionK',
+            \'<C-l>': 'OpenFileFromGrepStringInDirectionL',
             \ }
 
-let g:spectroscope_binds_diagnostics_directions = {
+let g:spectroscope_diagnostics_binds = {
             \'<CR>': 'OpenFileFromDiagnosticGeneric', 
             \'<C-v>': 'OpenFileFromDiagnosticVSplitRight',
-            \'H': 'OpenFileFromDiagnosticInDirectionH',
-            \'J': 'OpenFileFromDiagnosticInDirectionJ',
-            \'K': 'OpenFileFromDiagnosticInDirectionK',
-            \'L': 'OpenFileFromDiagnosticInDirectionL',
+            \'<C-h>': 'OpenFileFromDiagnosticInDirectionH',
+            \'<C-j>': 'OpenFileFromDiagnosticInDirectionJ',
+            \'<C-k>': 'OpenFileFromDiagnosticInDirectionK',
+            \'<C-l>': 'OpenFileFromDiagnosticInDirectionL',
             \ }
 
 let g:spectroscope_term_commands_binds = {

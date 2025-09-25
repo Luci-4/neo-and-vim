@@ -118,6 +118,16 @@ function! CleanSearchHighlights(pickerbufnr, filetype) abort
     endif
 endfunction
 
+function! SaveLastOpenedPickerData(bufnr, input, filetype, filtered_list)
+    call setbufvar(a:bufnr, 'input', a:input)
+    if !empty(a:input)
+        let g:last_opened_picker[a:filetype] = {}
+        let g:last_opened_picker[a:filetype]['input'] = a:input
+        let g:last_opened_picker[a:filetype]['list'] = a:filtered_list
+        let g:last_opened_picker[a:filetype]['cursor_line'] = line('.')
+    endif
+endfunction
+
 function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback, filetype)
 
 "    call clearmatches()
@@ -186,17 +196,33 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback, fi
                 endif
             endif
         endif
-        if char == char2nr("\<CR>")
-            let entering = 1
-            break
-        endif
+        let direction_binds = getbufvar(l:new_buf, 'direction_binds')
+        for [bind, function] in items(direction_binds)
+            if char == char2nr(eval('"\'. bind . '"'))
+                let entering = 1
+                let l:picker_win = bufwinnr(l:new_buf)
+                let l:picker_buf = l:new_buf
+
+                call SaveLastOpenedPickerData(l:new_buf, input, a:filetype, filtered_list)
+                call CleanSearchHighlights(l:new_buf, a:filetype)
+                execute 'call ' . function . '(getline("."))'
+
+                let l:opened_buf = bufnr('%') 
+                let l:current_win = winnr()
+                
+                if l:current_win == l:picker_win
+                    call CleanSearchHighlights(l:picker_buf, a:filetype)
+                endif
+                return []
+            endif
+        endfor
+
         if char == char2nr("\<") || char == char2nr("\<Esc>")
             let entering = 0
             break
         endif
 
         let input = s:update_input(input, char)
-
         if empty(input)
             let filtered_list = copy(list)
         else
@@ -206,54 +232,12 @@ function! RunPickerWhile(buf, input, list, filter_callback, pattern_callback, fi
         echo input
     endwhile
 
-
-    call setbufvar(l:new_buf, 'input', input)
-
-    let direction_binds = getbufvar(l:new_buf, 'direction_binds')
-    if !empty(input)
-        let filetype = getbufvar(l:new_buf, '&filetype')
-        let g:last_opened_picker[a:filetype] = {}
-        let g:last_opened_picker[a:filetype]['input'] = input
-        let g:last_opened_picker[a:filetype]['list'] = filtered_list
-        let g:last_opened_picker[a:filetype]['cursor_line'] = line('.')
-    endif
-
-
+    call SaveLastOpenedPickerData(l:new_buf, input, a:filetype, filtered_list)
     call CleanSearchHighlights(l:new_buf, a:filetype)
+
     if entering == 0
         return filtered_list
     endif
-    while 1
-        echo "Direction:"
-        let direction = getchar()
-        if direction == char2nr("\<Esc>")
-            break
-        endif
-
-
-        let char_direction = nr2char(direction)
-
-        if direction == char2nr("\<CR>")
-            let char_direction = ''
-        endif
-
-        if has_key(direction_binds, char_direction)
-
-            let l:picker_win = bufwinnr(l:new_buf)
-            let l:picker_buf = l:new_buf
-
-            execute 'call ' . direction_binds[char_direction] . '(getline("."))'
-
-            let l:opened_buf = bufnr('%') 
-            let l:current_win = winnr()
-            
-            if l:current_win == l:picker_win
-                call CleanSearchHighlights(l:picker_buf, a:filetype)
-            endif
-            break
-        endif
-        echo "invalid: " . nr2char(direction)
-    endwhile
     return []
 endfunction
 

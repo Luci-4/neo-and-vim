@@ -16,10 +16,10 @@ endfunction
 
 function! FindStringWithFilter()
 
-    call OpenSpecialListBufferPicker([], '', g:spectroscope_picker_binds_grep_directions, 'GrepFilterCallback',  'greplist', 0, 0, 0, g:spectroscope_grep_binds, '', 'GrepPatternCallback')
+    call OpenSpecialListBufferPicker([], '', g:spectroscope_grep_binds, 'GrepFilterCallback',  'greplist', 0, 0, 0, g:spectroscope_grep_binds, '', 'GrepPatternCallback')
 endfunction
 
 function! FindStringWordUnderCursorWithFilter()
     let word_under_cursor = expand('<cword>')
-    call OpenSpecialListBufferPicker([], word_under_cursor, g:spectroscope_picker_binds_grep_directions, 'GrepFilterCallback',  'greplist', 0, 0, 0, g:spectroscope_grep_binds, 'GrepPatternCallback')
+    call OpenSpecialListBufferPicker([], word_under_cursor, g:spectroscope_grep_binds, 'GrepFilterCallback',  'greplist', 0, 0, 0, g:spectroscope_grep_binds, 'GrepPatternCallback')
 endfunction

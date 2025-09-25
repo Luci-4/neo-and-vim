@@ -99,7 +99,7 @@ local function go_to_definition()
                 return string.format("%s:%d:%d:%s", relpath, it.lnum, it.col, it.text or "")
             end, items)
 
-            vim.fn.OpenSpecialListBuffer(formatted, vim.g.spectroscope_binds_reference_directions, "referenceslist", 1, 0)
+            vim.fn.OpenSpecialListBuffer(formatted, vim.g.spectroscope_references_binds, "referenceslist", 1, 0)
         end
     end)
 end
@@ -118,7 +118,7 @@ local function show_references()
             return string.format("%s:%d:%d:%s", relpath, it.lnum, it.col, it.text or "")
         end, items)
 
-        vim.fn.OpenSpecialListBuffer(formatted, vim.g.spectroscope_binds_reference_directions, "referenceslist", 1, 0)
+        vim.fn.OpenSpecialListBuffer(formatted, vim.g.spectroscope_references_binds, "referenceslist", 1, 0)
     end)
 end
 
@@ -148,7 +148,7 @@ local function show_diagnostics()
 
     vim.fn.OpenSpecialListBuffer(
         old_diags,
-        vim.g.spectroscope_binds_diagnostics_directions,
+        vim.g.spectroscope_diagnostics_binds,
         "diagnosticslist",
         1,
         0,
