@@ -27,11 +27,11 @@ nnoremap <leader>* :call FindStringWordUnderCursorWithFilter()<CR>
 
 nnoremap <Leader>ct :call ListTermCommands()<CR>
 
-nnoremap <leader>to :call OpenNewTerminal()<CR>
-nnoremap <leader>tt :call ToggleLastTerminal()<CR>
-nnoremap <leader>tp :call PrevTerminal()<CR>
-nnoremap <leader>tn :call NextTerminal()<CR>
-nnoremap <leader>tl :call ListTerminals()<CR>
+"nnoremap <leader>to :call OpenNewTerminal()<CR>
+nnoremap <leader>t :call ToggleSingleTerminal()<CR>
+"nnoremap <leader>tp :call PrevTerminal()<CR>
+"nnoremap <leader>tn :call NextTerminal()<CR>
+"nnoremap <leader>tl :call ListTerminals()<CR>
 
 
 nnoremap <leader><leader> <c-^>

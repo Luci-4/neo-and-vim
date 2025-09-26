@@ -20,17 +20,49 @@ function! RunTermCommand(cmd) abort
     call chansend(l:job, a:cmd . "\n")
 endfunction
 
-function! ToggleLastTerminal() abort
-    let l:terminals = filter(range(1, bufnr('$')), 'bufexists(v:val) && getbufvar(v:val, "&buftype") ==# "terminal"')
-    if empty(l:terminals)
-        echo "No terminal buffer found"
-        return
+function! ToggleSingleTerminal()
+    if tabpagenr('$') < 2
+        tabnew
+    else
+        if tabpagenr() != 2
+            execute "tabnext 2"
+        else
+            execute "tabnext 1"
+            return
+        endif
+
     endif
 
-    let l:last_term = max(l:terminals)
 
-    execute 'sbuffer' l:last_term
+    let term_buf_name = "__MY_TERMINAL__"
+    let term_buf = -1
+
+    for buf in range(1, bufnr('$'))
+        if bufexists(buf) && bufname(buf) ==# term_buf_name
+            let term_buf = buf
+            break
+        endif
+    endfor
+
+    if term_buf != -1
+        let displayed = 0
+        for win in range(1, winnr('$'))
+            if winbufnr(win) == term_buf
+                let displayed = 1
+                break
+            endif
+        endfor
+
+        if !displayed
+            execute "buffer " . term_buf
+        endif
+        return 
+    endif
+
+    execute "terminal"
+    execute "file " . term_buf_name
 endfunction
+
 
 function! NextTerminal() abort
     let start = bufnr('%')
