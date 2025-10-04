@@ -4,6 +4,7 @@ execute 'source' s:config_path . '/files_utils.vim'
 execute 'source' s:config_path . '/spectroscope/files_utils.vim'
 execute 'source' s:config_path . '/spectroscope/grep_utils.vim'
 execute 'source' s:config_path . '/spectroscope/diagnostics_utils.vim'
+execute 'source' s:config_path . '/spectroscope/buffers_utils.vim'
 execute 'source' s:config_path . '/commands.vim'
 execute 'source' s:config_path . '/terminal.vim'
 
@@ -59,3 +60,13 @@ let g:spectroscope_term_commands_binds = {
 let g:spectroscope_terminal_binds = {
             \'<CR>': 'OpenTerminal', 
             \ }
+
+let g:spectroscope_buffers_binds = {
+        \'<CR>': 'OpenBuffer', 
+        \'<C-v>': 'OpenBufferVSplitRight',
+        \'<C-h>': 'OpenBufferInWindowInDirectionH',
+        \'<C-j>': 'OpenBufferInWindowInDirectionJ',
+        \'<C-k>': 'OpenBufferInWindowInDirectionK',
+        \'<C-l>': 'OpenBufferInWindowInDirectionL',
+        \'<C-o>': 'OpenBufferExternally',
+        \ }

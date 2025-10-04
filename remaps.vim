@@ -4,21 +4,21 @@ execute 'source' s:config_path . '/spectroscope/grep.vim'
 execute 'source' s:config_path . '/spectroscope/messages.vim'
 execute 'source' s:config_path . '/spectroscope/commands.vim'
 execute 'source' s:config_path . '/spectroscope/terminal.vim'
+execute 'source' s:config_path . '/spectroscope/buffers.vim'
 execute 'source' s:config_path . '/comments.vim'
 execute 'source' s:config_path . '/terminal.vim'
 
 let mapleader = "\<Space>"
 
+nnoremap <leader>v :vsplit<CR>
 " nnoremap <Leader>gb :call ListBranches()<CR>
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 nnoremap <Leader>ff :call FindFiles()<CR>
-nnoremap <Leader>fr :call ListRecentFilesInBuffer(1)<CR>
-
-
+nnoremap <Leader>fr :call ListRecentFilesInBuffer(0)<CR>
 nnoremap <Leader>fs :call FindFilesWithFilter()<CR>
 nnoremap <Leader>fh :call LastFilesWithFilter()<CR>
 
-
+nnoremap <Leader>bb :call ListBuffers()<CR>
 
 nnoremap <leader>/ :call FindStringWithFilter()<CR>
 nnoremap <leader>* :call FindStringWordUnderCursorWithFilter()<CR>
@@ -61,10 +61,10 @@ nnoremap <A-j> <C-w>j
 nnoremap <A-k> <C-w>k
 nnoremap <A-l> <C-w>l
 
-nnoremap <C-k> :call IncreaseSize()<CR>
-nnoremap <C-j> :call DecreaseSize()<CR>
-nnoremap <C-l> :call IncreaseWidth()<CR>
-nnoremap <C-h> :call DecreaseWidth()<CR>
+nnoremap <C-K> :call IncreaseSize()<CR>
+nnoremap <C-J> :call DecreaseSize()<CR>
+nnoremap <C-L> :call IncreaseWidth()<CR>
+nnoremap <C-H> :call DecreaseWidth()<CR>
 
 nnoremap <C-M-j> <C-e>
 nnoremap <C-M-k> <C-y>

@@ -8,5 +8,5 @@ function! ShowMessagesInBuffer()
     redir END
 
     let l:lines = split(l:msgs, "\n")
-    call OpenSpecialListBuffer(l:lines, {}, 'messagesbuffer', 1, 1)
+    call OpenSpecialListBuffer(l:lines, {}, 'messagesbuffer', 0, 1)
 endfunction

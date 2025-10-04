@@ -270,7 +270,11 @@ function! OpenSpecialListBufferPicker(list, input, direction_binds, filter_callb
         endif
 
         call setbufvar(l:new_buf, "input", input)
-        execute 'vertical sbuffer' l:new_buf
+        if a:vertical == 1
+            execute 'vertical sbuffer' l:new_buf
+        else
+            execute 'buffer' l:new_buf
+        endif
         call setbufvar(l:new_buf, '&modifiable', 1)
         call deletebufline(l:new_buf, 1, '$')
         call setbufline(l:new_buf, 1, a:list)

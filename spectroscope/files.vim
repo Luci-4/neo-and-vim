@@ -43,7 +43,7 @@ function! FindFiles()
     endif
 
     if !empty(l:files)
-        call OpenSpecialListBuffer(l:files, g:spectroscope_files_binds, g:files_spectroscope_file_type, 1, 0)
+        call OpenSpecialListBuffer(l:files, g:spectroscope_files_binds, g:files_spectroscope_file_type, 0, 0)
     else
         echo "No files found in current directory."
     endif

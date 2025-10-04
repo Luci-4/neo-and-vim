@@ -12,7 +12,7 @@ endfunction
 function! ListTerminals()
     let l:terminals = filter(range(1, bufnr('$')), 'bufexists(v:val) && getbufvar(v:val, "&buftype") ==# "terminal"')
     if !empty(l:terminals)
-        call OpenSpecialListBuffer(l:terminals, g:spectroscope_terminal_binds, g:files_spectroscope_file_type, 1, 0, "FormatFromTerminalBufnr")
+        call OpenSpecialListBuffer(l:terminals, g:spectroscope_terminal_binds, g:files_spectroscope_file_type, 0, 0, "FormatFromTerminalBufnr")
     else
         echo "No terminals found in current directory."
     endif
