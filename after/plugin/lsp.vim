@@ -930,9 +930,8 @@ if executable('clangd')
     nnoremap gd :call LSPGoToDefintion()<CR>
     nnoremap gr :call LSPReferences()<CR>
     nnoremap K :call LSPHover()<CR>
-    nnoremap ge :call LSPDiagnosticsForBuffer()<CR>
+    nnoremap <leader>ds :call LSPDiagnosticsForBuffer()<CR>
     nnoremap <leader>pg :call ShowPartialProjectGraph()<CR>
-    nnoremap <leader>sc :call UpdateStatuslineWithScope()<CR>
     inoremap <expr> <M-j> pumvisible() ? "\<C-n>" : "\<M-j>"
     inoremap <expr> <M-k> pumvisible() ? "\<C-p>" : "\<M-k>"
     inoremap <expr> <Esc>j pumvisible() ? "\<C-n>" : "\<M-j>"

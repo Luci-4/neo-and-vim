@@ -207,8 +207,7 @@ local function buf_set_keymaps(bufnr)
     vim.keymap.set('n', 'K', vim.lsp.buf.hover, opts)
 
     vim.keymap.set('n', 'gr', show_references, opts)
-    vim.keymap.set('n', '<leader>sc', function() get_scope_breadcrumbs(bufnr) end, opts)
-    vim.keymap.set('n', '<leader>dd', show_diagnostics, opts)
+    vim.keymap.set('n', '<leader>ds', show_diagnostics, opts)
     vim.keymap.set('n', '<leader>fl', function() vim.lsp.buf.format({ async = true }) end, { noremap = true, silent = true, buffer = bufnr })
     vim.keymap.set('v', '<leader>fl', format_selection, { noremap = true, silent = true, buffer = bufnr })
     vim.bo[bufnr].omnifunc = "v:lua.vim.lsp.omnifunc"

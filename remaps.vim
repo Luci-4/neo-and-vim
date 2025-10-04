@@ -61,10 +61,11 @@ nnoremap <A-j> <C-w>j
 nnoremap <A-k> <C-w>k
 nnoremap <A-l> <C-w>l
 
-nnoremap <C-K> :call IncreaseSize()<CR>
-nnoremap <C-J> :call DecreaseSize()<CR>
-nnoremap <C-L> :call IncreaseWidth()<CR>
-nnoremap <C-H> :call DecreaseWidth()<CR>
+
+nnoremap <Tab>k :call IncreaseSize()<CR>
+nnoremap <Tab>j :call DecreaseSize()<CR>
+nnoremap <Tab>l :call IncreaseWidth()<CR>
+nnoremap <Tab>h :call DecreaseWidth()<CR>
 
 nnoremap <C-M-j> <C-e>
 nnoremap <C-M-k> <C-y>
@@ -79,7 +80,8 @@ xnoremap <C-/> :call ToggleComment()<CR>
 nnoremap <C-_> :call ToggleComment()<CR>
 xnoremap <C-_> :call ToggleComment()<CR>
 
-nnoremap <leader>s :%s/\<<C-r><C-w>\>/<C-r><C-w>/gc<Left><Left><Left>
-vnoremap <leader>s :s/\<<C-r><C-w>\>/<C-r><C-w>/g<Left><Left>
+nnoremap <leader>s* :%s/\<<C-r><C-w>\>/<C-r><C-w>/gc<Left><Left><Left>
+vnoremap <leader>sa :s/\<<C-r><C-w>\>/<C-r><C-w>/g<Left><Left>
+vnoremap <leader>sc "sy:%s/<C-r>s/<C-r>s/gc<Left><Left><Left>
 nnoremap <Leader>r <C-w>r
 nnoremap <Leader>R <C-w>R
