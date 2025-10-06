@@ -184,7 +184,9 @@ local function custom_complete()
         return item.filterText or item.label
     end, items)
 
-    vim.fn.complete(start_col, completions)
+    pcall(function()
+        vim.fn.complete(start_col, completions)
+    end)
   end)
 end
 local function format_selection()
