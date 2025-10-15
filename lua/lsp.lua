@@ -34,7 +34,7 @@ local function get_scope_breadcrumbs(bufnr)
     local params = vim.lsp.util.make_position_params(nil, client.offset_encoding)
     vim.lsp.buf_request(bufnr, "textDocument/documentSymbol", params, function(err, result, _, _)
         if err or not result or vim.tbl_isempty(result) then
-            vim.g.breadcrumbs = "__"
+            vim.g.breadcrumbs_per_buffer = {}
             return
         end
 
@@ -68,8 +68,12 @@ local function get_scope_breadcrumbs(bufnr)
     :map(function(s) return vim.fn.FormatSymbolForBreadcrumbs(s.name, s.kind) end)
     :join(" > ")
 
-    vim.g.breadcrumbs = breadcrumbs
-    vim.opt.statusline = "%f %y %{g:breadcrumbs} %=Ln:%l Col:%c"
+    
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+        if vim.api.nvim_win_get_buf(win) == bufnr then
+            vim.api.nvim_set_option_value("winbar", (breadcrumbs == "" and " ") or breadcrumbs, { scope = "local", win = win})
+        end
+    end
 end)
 end
 
