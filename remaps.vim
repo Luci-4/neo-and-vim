@@ -56,10 +56,13 @@ nnoremap <Esc>h <C-w>h
 nnoremap <Esc>j <C-w>j
 nnoremap <Esc>k <C-w>k
 nnoremap <Esc>l <C-w>l
+nnoremap <Esc>x <C-w>x
 nnoremap <A-h> <C-w>h
 nnoremap <A-j> <C-w>j
 nnoremap <A-k> <C-w>k
 nnoremap <A-l> <C-w>l
+nnoremap <A-x> <C-w>x
+
 
 
 nnoremap <Tab>k :call IncreaseSize()<CR>
