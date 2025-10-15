@@ -112,12 +112,19 @@ autocmd FileType python setlocal tabstop=4 shiftwidth=4
 set signcolumn=yes
 
 function! SetStatusLine()
-    set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
+    set statusline=%f\ %y\ %=Ln:%l\ Col:%c
 endfunction
 
-autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
 set belloff=all
 set backspace=indent,eol,start
 set completeopt=menu,menuone,noselect
 
 autocmd FileType cpp setlocal commentstring=//%s
+
+augroup remember_cursor_position
+    autocmd!
+    autocmd BufReadPost *
+        \ if line("'\"") > 0 && line("'\"") <= line("$") | 
+        \   execute "normal! g`\"" |  
+        \ endif
+augroup END
