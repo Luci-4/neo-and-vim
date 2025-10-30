@@ -1,4 +1,5 @@
 let s:config_path = split(&runtimepath, ',')[0]
+let g:use_plugins = v:true
 execute 'source' s:config_path . '/files_utils.vim'
 call GenerateFileCache(0)
 execute 'source' s:config_path . '/settings.vim'
@@ -7,6 +8,7 @@ execute 'source' s:config_path . '/remaps.vim'
 execute 'source' s:config_path . '/markdown.vim'
 execute 'source' s:config_path . '/terminal.vim'
 
+
 if !has('nvim')
     execute 'source' s:config_path . '/git.vim'
 endif
@@ -14,10 +16,11 @@ endif
 execute 'source' s:config_path . '/lsp_utils.vim'
 if has('nvim')
     lua require('lsp')
+    lua dofile(vim.fn.stdpath('config') .. '/lazy.lua')
 endif
-function! SetStatusLine()
-    set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
-endfunction
+" function! SetStatusLine()
+    " set statusline=%f\ %y\ %{g:breadcrumbs}\ %=Ln:%l\ Col:%c
+" endfunction
 
 autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
 autocmd VimEnter * call SetupSpecialListBufferPicker('filelist')

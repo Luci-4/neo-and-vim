@@ -88,3 +88,13 @@ vnoremap <leader>sa :s/\<<C-r><C-w>\>/<C-r><C-w>/g<Left><Left>
 vnoremap <leader>sc "sy:%s/<C-r>s/<C-r>s/gc<Left><Left><Left>
 nnoremap <Leader>r <C-w>r
 nnoremap <Leader>R <C-w>R
+
+if exists('g:use_plugins')
+  nnoremap <silent> <leader>ftf :lua require('telescope.builtin').find_files()<CR>
+  nnoremap <silent> <leader>ftg :lua require('telescope.builtin').live_grep()<CR>
+  nnoremap <silent> <leader>ftb :lua require('telescope.builtin').buffers()<CR>
+  nnoremap <silent> <leader>fth :lua require('telescope.builtin').help_tags()<CR>
+  nnoremap <silent> <leader>fto :lua require('telescope.builtin').oldfiles()<CR>
+  nnoremap <silent> <leader>ftr :lua require('telescope.builtin').lsp_references()<CR>
+  nnoremap <silent> <leader>ftc :lua require('telescope.builtin').commands()<CR>
+endif

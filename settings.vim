@@ -115,6 +115,7 @@ function! SetStatusLine()
     set statusline=%f\ %y\ %=Ln:%l\ Col:%c
 endfunction
 
+let g:breadcrumbs = ' '
 function! SetWinBar()
     set winbar=%{g:breadcrumbs}
 endfunction
