@@ -32,7 +32,7 @@ local function collect_all_results(prompt_bufnr)
   local picker_name = picker.prompt_title 
     local results = {}
 
-    print(picker_name)
+    -- print(picker_name)
     if picker_name == "Find Files" then
         for _, entry in ipairs(picker.finder.results) do
             table.insert(results, entry[1])  -- entry[1] is the file path
@@ -49,7 +49,7 @@ local function collect_all_results(prompt_bufnr)
         for _, entry in ipairs(get_all_manager_entries(picker)) do
             table.insert(results, entry[1])  -- entry[1] is the file path
         end
-        print(vim.inspect(results))
+        -- print(vim.inspect(results))
         actions.close(prompt_bufnr)
         vim.fn.OpenSpecialListBuffer(results, vim.g.spectroscope_grep_binds, 'greplist', 0, 0)
         return
