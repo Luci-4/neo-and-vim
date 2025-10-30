@@ -68,11 +68,11 @@ local function get_scope_breadcrumbs(bufnr)
     :map(function(s) return vim.fn.FormatSymbolForBreadcrumbs(s.name, s.kind) end)
     :join(" > ")
 
-    
+    -- vim.g.breadcrumbs_per_buffer[bufnr] = breadcrumbs
     for _, win in ipairs(vim.api.nvim_list_wins()) do
-        if vim.api.nvim_win_get_buf(win) == bufnr then
-            vim.api.nvim_set_option_value("winbar", (breadcrumbs == "" and " ") or breadcrumbs, { scope = "local", win = win})
-        end
+      if vim.api.nvim_win_get_buf(win) == bufnr then
+        vim.api.nvim_set_option_value("winbar", breadcrumbs, { scope = "local", win = win })
+      end
     end
 end)
 end
@@ -271,6 +271,11 @@ local function on_attach(client, bufnr)
     buf_set_keymaps(bufnr)
 end
 
+--local cmd = "cif/commands/generate-compile-commands.sh -t all " .. vim.fn.getcwd()
+--print(cmd)
+--  local handle = io.popen(cmd)
+--  local result = handle:read("*a")
+--print(result)
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities.textDocument.completion.completionItem.snippetSupport = false
 vim.lsp.config['clangd'] = {

@@ -115,6 +115,12 @@ function! SetStatusLine()
     set statusline=%f\ %y\ %=Ln:%l\ Col:%c
 endfunction
 
+function! SetWinBar()
+    set winbar=%{g:breadcrumbs}
+endfunction
+
+" autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetStatusLine() | endif
+autocmd VimEnter * if get(g:, 'breadcrumbs', '') !=# '' | call SetWinBar() | endif
 set belloff=all
 set backspace=indent,eol,start
 set completeopt=menu,menuone,noselect
@@ -123,8 +129,8 @@ autocmd FileType cpp setlocal commentstring=//%s
 
 augroup remember_cursor_position
     autocmd!
-    autocmd BufReadPost *
+    autocmd BufReadPost * 
         \ if line("'\"") > 0 && line("'\"") <= line("$") | 
-        \   execute "normal! g`\"" |  
+        \   execute "normal! g`\"" |
         \ endif
 augroup END

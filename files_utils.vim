@@ -37,7 +37,7 @@ function! FindFilesInCWDSystemBased(...)
     endif
 
     for pattern in g:blacklist_files
-        let l:files = filter(l:files, 'v:val !~# pattern_to_regex(pattern)')
+        let l:files = filter(l:files, 'v:val !~# pattern')
     endfor
 
     let l:files = filter(l:files, 'v:val =~# "^" . escape(l:root, "/\\")')
