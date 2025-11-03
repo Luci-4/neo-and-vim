@@ -28,14 +28,17 @@ end
 local function collect_all_results(prompt_bufnr)
     local actions = require("telescope.actions")
     local action_state = require("telescope.actions.state")
-  local picker = action_state.get_current_picker(prompt_bufnr)
-  local picker_name = picker.prompt_title 
+    local picker = action_state.get_current_picker(prompt_bufnr)
+    local picker_name = picker.prompt_title 
     local results = {}
 
     -- print(picker_name)
     if picker_name == "Find Files" then
         for _, entry in ipairs(picker.finder.results) do
-            table.insert(results, entry[1])  -- entry[1] is the file path
+            if not picker.sorter._discard_state.filtered[entry[1]] then
+                table.insert(results, entry[1])  -- entry[1] is the file path
+            end
+
         end
         actions.close(prompt_bufnr)
         vim.fn.OpenSpecialListBuffer(results, vim.g.spectroscope_files_binds, 'filelist', 0, 0)

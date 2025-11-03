@@ -56,8 +56,16 @@ function! GrepInCWDSystemBased(needle) abort
         endif
 
         let l:sys_output = system(l:cmd)
-        
-        let l:results = split(substitute(l:sys_output, '\s\+', ' ', 'g'), "\n")
+
+        let l:sys_output = substitute(l:sys_output, '\s\+', ' ', 'g')
+        let l:root = substitute(l:root, '\\', '/', 'g')
+        let l:sys_output = substitute(l:sys_output, '\\', '/', 'g')
+
+        " Split into lines first
+        let l:results = split(l:sys_output, "\n")
+
+        " Remove l:root prefix from each line
+        call map(l:results, {_, v -> substitute(v, '^' . escape(l:root, '/\.^$~[]*') . '/', '', '')})
 
     elseif IsOnLinux() && executable('grep')
         if l:use_black_list
