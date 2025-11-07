@@ -15,8 +15,8 @@ nnoremap <leader>v :vsplit<CR>
 nnoremap <Leader>lm :call ShowMessagesInBuffer()<CR>
 nnoremap <Leader>ff :call FindFiles()<CR>
 nnoremap <Leader>fr :call ListRecentFilesInBuffer(0)<CR>
-nnoremap <Leader>fs :call FindFilesWithFilter()<CR>
-nnoremap <Leader>fh :call LastFilesWithFilter()<CR>
+nnoremap <Leader>ftf :call FindFilesWithFilter()<CR>
+" nnoremap <Leader>fh :call LastFilesWithFilter()<CR>
 
 nnoremap <Leader>bb :call ListBuffers()<CR>
 
@@ -90,11 +90,28 @@ nnoremap <Leader>r <C-w>r
 nnoremap <Leader>R <C-w>R
 
 if exists('g:use_plugins')
-  nnoremap <silent> <leader>ftf :lua require('telescope.builtin').find_files()<CR>
-  nnoremap <silent> <leader>ftg :lua require('telescope.builtin').live_grep()<CR>
+  nnoremap <silent> <leader>fs :lua require('telescope.builtin').find_files()<CR>
+  nnoremap <silent> <leader>/ :lua require('telescope.builtin').live_grep()<CR>
   nnoremap <silent> <leader>ftb :lua require('telescope.builtin').buffers()<CR>
   nnoremap <silent> <leader>fth :lua require('telescope.builtin').help_tags()<CR>
   nnoremap <silent> <leader>fto :lua require('telescope.builtin').oldfiles()<CR>
   nnoremap <silent> <leader>ftr :lua require('telescope.builtin').lsp_references()<CR>
   nnoremap <silent> <leader>ftc :lua require('telescope.builtin').commands()<CR>
+  nnoremap <silent> <leader>fh :lua require('telescope.builtin').resume()<CR>
 endif
+
+function! GitBlameSelection()
+    if mode() ==# 'v'
+        let start_line = line('v')
+        let end_line = line(',')
+    else
+        let start_line = line('.')
+        let end_line = line('.')
+    endif
+
+    let filepath = expand('%')
+    let command = 'git blame -L '.start_line.','.end_line.' '.filepath
+    echom command
+    echom blame_output
+endfunction
+
