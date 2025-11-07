@@ -111,7 +111,10 @@ function! GitBlameSelection()
 
     let filepath = expand('%')
     let command = 'git blame -L '.start_line.','.end_line.' '.filepath
+    let blame_output = system(command)
     echom command
     echom blame_output
 endfunction
 
+nnoremap <Leader>gbl :call GitBlameSelection()<CR>
+vnoremap <Leader>gbl :call GitBlameSelection()<CR>
