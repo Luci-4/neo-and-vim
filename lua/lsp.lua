@@ -131,9 +131,19 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
         vim.lsp.completion.enable(true, client.id, bufnr, {
           autotrigger = true,
-          convert = function(item)
-            return { abbr = item.label:gsub('%b()', '') }
-          end,
+
+        convert = function(item)
+            local token = item.label:match("^[%w_]+") or item.label
+
+          return {
+            abbr = item.filterText,        -- what shows in the menu
+
+            menu = "",
+            kind = vim.lsp.protocol.CompletionItemKind[item.kind] or "",    -- symbol kind for icon in menu
+            insertText = token,  -- insert just the function/variable name
+            textEdit = nil,      -- ignore LSP textEdit (prevents signature insertion)
+          }
+        end,
         })
 
         local completion_group = vim.api.nvim_create_augroup('lsp-auto-complete', { clear = false })
