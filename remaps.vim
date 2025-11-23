@@ -145,3 +145,23 @@ endfunction
 nnoremap <Leader>gbl :call GitBlameSelection()<CR>
 vnoremap <Leader>gbl :call GitBlameSelection()<CR>
 
+nnoremap <leader>ej :cnext<CR>
+nnoremap <leader>ek :cprev<CR>
+
+nnoremap <leader>eh :colder<CR>
+nnoremap <leader>el :cnewer<CR>
+
+" nnoremap <leader>qo :copen<CR>
+" nnoremap <leader>qQ :cclose<CR>
+
+nnoremap <leader>eH :cfirst<CR>
+nnoremap <leader>eL :clast<CR>
+
+function! ToggleQuickfix()
+  if empty(filter(getwininfo(), 'v:val.quickfix'))
+    copen
+  else
+    cclose
+  endif
+endfunction
+nnoremap <leader>e :call ToggleQuickfix()<CR>

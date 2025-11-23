@@ -7,6 +7,7 @@ execute 'source' s:config_path . '/custom_settings.vim'
 execute 'source' s:config_path . '/remaps.vim'
 execute 'source' s:config_path . '/markdown.vim'
 execute 'source' s:config_path . '/terminal.vim'
+" execute 'source' s:config_path . '/cpphelp.vim'
 
 
 if !has('nvim')
