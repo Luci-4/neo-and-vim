@@ -11,7 +11,7 @@ execute 'source' s:config_path . '/terminal.vim'
 
 
 if !has('nvim')
-    execute 'source' s:config_path . '/git.vim'
+    " execute 'source' s:config_path . '/git.vim'
 endif
 
 execute 'source' s:config_path . '/lsp_utils.vim'
