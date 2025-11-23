@@ -21,7 +21,7 @@ nnoremap <Leader>ftf :call FindFilesWithFilter()<CR>
 nnoremap <Leader>bb :call ListBuffers()<CR>
 
 nnoremap <leader>/ :call FindStringWithFilter()<CR>
-nnoremap <leader>* :call FindStringWordUnderCursorWithFilter()<CR>
+" nnoremap <leader>* :call FindStringWordUnderCursorWithFilter()<CR>
 
 " nnoremap <Leader>fs :call FilesBySubstringWithSearch()<CR>
 
@@ -83,14 +83,37 @@ xnoremap <C-/> :call ToggleComment()<CR>
 nnoremap <C-_> :call ToggleComment()<CR>
 xnoremap <C-_> :call ToggleComment()<CR>
 
+" Search & replace the word under cursor across the whole file (with confirmation)
 nnoremap <leader>s* :%s/\<<C-r><C-w>\>/<C-r><C-w>/gc<Left><Left><Left>
+
+
+" Search & replace the visually-selected word inside the selection (no confirmation)
 vnoremap <leader>sa :s/\<<C-r><C-w>\>/<C-r><C-w>/g<Left><Left>
+
+" Yank visual selection into register s, then do a global search & replace of that text (with confirmation)
 vnoremap <leader>sc "sy:%s/<C-r>s/<C-r>s/gc<Left><Left><Left>
 nnoremap <Leader>r <C-w>r
 nnoremap <Leader>R <C-w>R
 
+function! VisualLiveGrep()
+  let l:start_pos = getpos("'<")
+  let l:end_pos = getpos("'>")
+
+  if l:start_pos[1] == l:end_pos[1]
+    let l:selection = getline(l:start_pos[1])[l:start_pos[2]-1 : l:end_pos[2]-1]
+  else
+    let l:lines = getline(l:start_pos[1], l:end_pos[1])
+
+    let l:lines[0] = l:lines[0][l:start_pos[2]-1 :]
+    let l:lines[-1] = l:lines[-1][0 : l:end_pos[2]-1]
+
+    let l:selection = join(l:lines, "\n")
+  endif
+
+  execute "lua require('telescope.builtin').live_grep{ default_text = [[" . l:selection . "]], additional_args = { '--fixed-strings' }}"
+endfunction
 if exists('g:use_plugins')
-  nnoremap <silent> <leader>fs :lua require('telescope.builtin').find_files()<CR>
+    nnoremap <silent> <leader>fs :lua require('telescope.builtin').find_files({additional_args = {"--fixed-strings"}})<CR>
   nnoremap <silent> <leader>/ :lua require('telescope.builtin').live_grep()<CR>
   nnoremap <silent> <leader>ftb :lua require('telescope.builtin').buffers()<CR>
   nnoremap <silent> <leader>fth :lua require('telescope.builtin').help_tags()<CR>
@@ -98,6 +121,9 @@ if exists('g:use_plugins')
   nnoremap <silent> <leader>ftr :lua require('telescope.builtin').lsp_references()<CR>
   nnoremap <silent> <leader>ftc :lua require('telescope.builtin').commands()<CR>
   nnoremap <silent> <leader>fh :lua require('telescope.builtin').resume()<CR>
+  nnoremap <silent> <leader>* :lua require('telescope.builtin').live_grep({default_text = vim.fn.expand("<cword>"),   additional_args = {"--fixed-strings"}})<CR>
+
+    xnoremap <silent> <leader>* :<C-U>call VisualLiveGrep()<CR>
 endif
 
 function! GitBlameSelection()
@@ -118,3 +144,4 @@ endfunction
 
 nnoremap <Leader>gbl :call GitBlameSelection()<CR>
 vnoremap <Leader>gbl :call GitBlameSelection()<CR>
+
