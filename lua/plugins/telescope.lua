@@ -32,43 +32,30 @@ local function collect_all_results(prompt_bufnr)
     local picker_name = picker.prompt_title 
     local results = {}
 
-    -- print(picker_name)
     if picker_name == "Find Files" then
         for _, entry in ipairs(picker.finder.results) do
             if not picker.sorter._discard_state.filtered[entry[1]] then
-                table.insert(results, entry[1])  -- entry[1] is the file path
+                table.insert(results, {filename = entry[1]})
             end
 
         end
         actions.close(prompt_bufnr)
-        vim.fn.OpenSpecialListBuffer(results, vim.g.spectroscope_files_binds, 'filelist', 0, 0)
+        vim.fn.setqflist(results, 'r')  -- 'r' replaces the current quickfix list
+        vim.cmd("copen")
         return
     end
 
     if picker_name == "Live Grep" then
 
-        -- print(vim.inspect(picker.manager))
-        -- print(vim.inspect(get_all_manager_entries(picker)))
         for _, entry in ipairs(get_all_manager_entries(picker)) do
-            table.insert(results, entry[1])  -- entry[1] is the file path
+            local parsed = vim.fn.ParseGrepLine(entry[1])
+            table.insert(results, {filename = parsed.file, lnum = parsed.line or 1, col = parsed.col, text = parsed.text})
         end
-        -- print(vim.inspect(results))
         actions.close(prompt_bufnr)
-        vim.fn.OpenSpecialListBuffer(results, vim.g.spectroscope_grep_binds, 'greplist', 0, 0)
+        vim.fn.setqflist(results, 'r')  -- 'r' replaces the current quickfix list
+        vim.cmd("copen")
         return
     end
-    -- for _, path in ipairs(results) do
-        -- print(path)
-    -- end
-
-  -- New way to get all results
-  -- for _, entry in ipairs(picker.manager:results()) do
-    -- table.insert(results_, entry.value)
-  -- end
-
-  -- local picker_name = picker.prompt_title or "unknown"
-  -- actions.close(prompt_bufnr)
-  -- handle_results_for_picker(picker_name, results)
 end
 
 return {
